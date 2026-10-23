@@ -326,6 +326,7 @@ static errno_t segment_header(elf_ld_t *elf, elf_segment_header_t *entry)
 	case PT_GNU_EH_FRAME:
 	case PT_GNU_STACK:
 	case PT_GNU_RELRO:
+	case PT_GNU_PROPERTY:
 		/* Ignore GNU headers, if present. */
 		break;
 	case PT_INTERP:
