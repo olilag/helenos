@@ -59,6 +59,7 @@ apps = [
 	'kill',
 	'killall',
 	'kio',
+	'lilo',
 	'loc',
 	'logset',
 	'lprint',

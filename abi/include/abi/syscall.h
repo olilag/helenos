@@ -111,6 +111,7 @@ typedef enum {
 
 	SYS_KLOG,
 	SYS_KIO_READ,
+	SYS_MASQ,
 } syscall_t;
 
 #endif

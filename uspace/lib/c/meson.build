@@ -123,6 +123,7 @@ src += files(
 	'generic/loader.c',
 	'generic/loc.c',
 	'generic/malloc.c',
+	'generic/masq.c',
 	'generic/ns.c',
 	'generic/pcb.c',
 	'generic/perm.c',

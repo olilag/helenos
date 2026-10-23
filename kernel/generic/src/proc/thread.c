@@ -151,6 +151,7 @@ static errno_t thr_constructor(void *obj, unsigned int kmflags)
 		return ENOMEM;
 
 	thread->kstack = (uint8_t *) PA2KA(stack_phys);
+	thread->masq = NULL;
 
 #ifdef CONFIG_UDEBUG
 	mutex_initialize(&thread->udebug.lock, MUTEX_PASSIVE);
@@ -324,6 +325,10 @@ static void thread_destroy(void *obj)
 	irq_spinlock_lock(&thread->task->lock, false);
 
 	list_remove(&thread->th_link);
+	
+	/* If the masq remains set after the previous task, it would cause the
+	 * page fault in next thread */
+	thread->masq = NULL;
 
 	/*
 	 * No other CPU has access to this thread anymore, so we don't need

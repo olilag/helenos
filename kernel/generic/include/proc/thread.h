@@ -47,6 +47,7 @@
 #include <udebug/udebug.h>
 #include <abi/proc/thread.h>
 #include <abi/sysinfo.h>
+#include <abi/arch/masq.h>
 #include <arch.h>
 
 #define THREAD              CURRENT->thread
@@ -140,6 +141,8 @@ typedef struct thread {
 
 	/** Thread's kernel stack. */
 	uint8_t *kstack;
+
+	struct masq *masq;
 
 	/*
 	 * Local fields.

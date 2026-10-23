@@ -56,6 +56,104 @@
 #include <console/console.h>
 #include <udebug/udebug.h>
 #include <log.h>
+#include <abi/arch/masq.h>
+
+#include <syscall/copy.h>
+
+static masq_t masq_copy;
+
+static void u64swap(uint64_t *a, uint64_t *b){
+	uint64_t tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
+
+static void masq2istate(masq_t *m, istate_t *istate){
+	u64swap(&istate->rax, &m->rax);
+	u64swap(&istate->rbx, &m->rbx);
+	u64swap(&istate->rcx, &m->rcx); // New RIP!!
+	u64swap(&istate->rdx, &m->rdx);
+	u64swap(&istate->rsi, &m->rsi);
+	u64swap(&istate->rsp, &m->rsp);
+	u64swap(&istate->rdi, &m->rdi);
+	u64swap(&istate->rbp, &m->rbp);
+	u64swap(&istate->r8 , &m->r8);
+	u64swap(&istate->r9 , &m->r9);
+	u64swap(&istate->r10, &m->r10);
+	//istate->r11 = m->r11; // Destroyed by the syscall instruction
+	u64swap(&istate->r12, &m->r12);
+	u64swap(&istate->r13, &m->r13);
+	u64swap(&istate->r14, &m->r14);
+	u64swap(&istate->r15, &m->r15);
+	u64swap(&istate->alignment, &m->fsbase);
+}
+
+/**
+ * The purpose of masquerade syscall is to transfer the control to different
+ * place in the address space and trap the syscalls. Once the syscall is trapped,
+ * the syscall returns and the masq struct contains the context from the trapped
+ * location.
+ *
+ * @todo Sanitize the userspace pointer *a1 to prevent invalid memory accesses
+ *          in the kernel.
+ *
+ * @param a1 Pointer to the masq struct
+ * @param a2 Unused
+ * @param a3
+ * @param a4
+ * @param a5
+ * @param a6
+ * @retval 0 On success
+ */
+static sysarg_t sys_masq(const sysarg_t a1, sysarg_t a2, sysarg_t a3, sysarg_t a4,
+						sysarg_t a5, sysarg_t a6){
+	const errno_t cr = copy_from_uspace(&masq_copy, a1, sizeof(masq_t));
+	if (cr != EOK) return cr;
+	// The istate pointer should be obtained by the istate_get(), but this
+	// function returns some nonsense
+	istate_t *istate = (void*)THREAD->arch.kstack_rsp;
+	THREAD->masq = &masq_copy;
+	masq2istate(THREAD->masq, istate);
+	THREAD->masq->reserved = a1;
+	istate->error_word = 0x1;
+	return EOK;
+}
+
+/**
+ * @brief Determine whether this thread's syscalls are masqueraded
+ *
+ * @param thread
+ *
+ * @retval true When masqueraded
+ * @retval false When not
+ */
+static bool thread_is_masq(thread_t *thread){
+	return thread->masq != NULL;
+}
+
+/**
+ * @brief End syscall masquerade
+ *
+ * Restore the userspace thread state from the point before calling a SYS_MASQ
+ * syscall.
+ * Store the current userspace thread state to a struct and pass it back to the
+ * userspace.
+ */
+static sysarg_t thread_unmasq(thread_t *thread) {
+    istate_t *istate = (istate_t*)thread->arch.kstack_rsp;
+	const sysarg_t uptr = thread->masq->reserved;
+    masq2istate(thread->masq, istate);
+	const errno_t rc = copy_to_uspace(uptr, thread->masq, sizeof(masq_t));
+	// Although we handle this correctly here, nasty things can still happen.
+	// The copy may fail only in case of invalid masq state in which case the
+	// return value to the userspace may be whatever...
+	if(rc != EOK) return rc;
+	thread->masq = NULL;
+	// The error word is misused to signal the full context update!!
+	// Do not remove
+	istate->error_word = 0x1;
+	return EOK;
+}
 
 static syshandler_t syscall_table[] = {
 	/* System management syscalls. */
@@ -137,6 +235,7 @@ static syshandler_t syscall_table[] = {
 
 	[SYS_KLOG] = (syshandler_t) sys_klog,
 	[SYS_KIO_READ] = (syshandler_t) sys_kio_read,
+	[SYS_MASQ] = (syshandler_t) sys_masq,
 };
 
 /** Dispatch system call */
@@ -165,7 +264,9 @@ sysarg_t syscall_handler(sysarg_t a1, sysarg_t a2, sysarg_t a3,
 #endif
 
 	sysarg_t rc;
-	if (id < sizeof_array(syscall_table)) {
+	if (thread_is_masq(THREAD)) {
+		rc = thread_unmasq(THREAD);
+	} else if (id < sizeof_array(syscall_table)) {
 		rc = syscall_table[id](a1, a2, a3, a4, a5, a6);
 	} else {
 		log(LF_OTHER, LVL_ERROR,

@@ -199,6 +199,14 @@ SYMBOL(int_\i)
 	movq %r14, ISTATE_OFFSET_R14(%rsp)
 	movq %r15, ISTATE_OFFSET_R15(%rsp)
 
+	/* Save userspace FS to istate->alignment
+     * This is only needed for the sys_masq functionality now.
+     */
+    movl $AMD_MSR_FS, %ecx
+    rdmsr
+    movl %eax, ISTATE_OFFSET_ALIGNMENT(%rsp)
+    movl %edx, ISTATE_OFFSET_ALIGNMENT+4(%rsp)
+
 	/*
 	 * Is this trap from the kernel?
 	 */
@@ -234,6 +242,11 @@ SYMBOL(int_\i)
 
 	/* Call exc_dispatch(i, istate) */
 	call exc_dispatch
+
+	movl $AMD_MSR_FS, %ecx
+    movl ISTATE_OFFSET_ALIGNMENT(%rsp), %eax
+    movl ISTATE_OFFSET_ALIGNMENT+4(%rsp), %edx
+    wrmsr
 
 	/*
 	 * Restore all scratch registers and the preserved registers we have
@@ -319,6 +332,19 @@ SYMBOL(syscall_entry)
 	movq %r15, ISTATE_OFFSET_R15(%rsp)  /* observability */
 
 	/*
+	 * Clear the ERROR_WORD to use it
+	 */
+	movq $0, ISTATE_OFFSET_ERROR_WORD(%rsp)
+
+    /* Save userspace FS to istate->alignment
+     * This is only needed for the sys_masq functionality now.
+     */
+    movl $AMD_MSR_FS, %ecx
+    rdmsr
+    movl %eax, ISTATE_OFFSET_ALIGNMENT(%rsp)
+    movl %edx, ISTATE_OFFSET_ALIGNMENT+4(%rsp)
+
+	/*
 	 * Switch to kernel FS base.
 	 */
 	movl $AMD_MSR_FS, %ecx
@@ -371,6 +397,17 @@ SYMBOL(syscall_entry)
 	movq ISTATE_OFFSET_RBP(%rsp), %rbp
 	movq ISTATE_OFFSET_RCX(%rsp), %rcx
 	movq ISTATE_OFFSET_R11(%rsp), %r11
+
+
+	/*
+	 * If the istate->error_word (temporarily) is 1, then restore all registers
+	 * from the istate struct. If no (default) then restore only the common regs.
+	 * The restore_regs branch will occur significantly less often and so it is placed after
+	 * the indirect jump to help the branch predictor
+	 */
+	cmpb $0x1, ISTATE_OFFSET_ERROR_WORD(%rsp)
+	je restore_all_regs
+
 	movq ISTATE_OFFSET_RSP(%rsp), %rsp
 
 	/*
@@ -384,6 +421,33 @@ SYMBOL(syscall_entry)
 	xorq %r8, %r8
 	xorq %r9, %r9
 	xorq %r10, %r10
+
+	sysretq
+
+/* Restore the rest of the general purpose registers from the istate structure
+ * This is probably required only for the SYS_MASQ syscall
+ */
+restore_all_regs:
+	movl $AMD_MSR_FS, %ecx
+    movl ISTATE_OFFSET_ALIGNMENT(%rsp), %eax
+    movl ISTATE_OFFSET_ALIGNMENT+4(%rsp), %edx
+    wrmsr
+	// Keep the order to feed the pipeline and utilize the memory prefetch
+	movq ISTATE_OFFSET_RAX(%rsp), %rax   // This will overwrite the return value of the syscall
+	movq ISTATE_OFFSET_RBX(%rsp), %rbx
+	movq ISTATE_OFFSET_RCX(%rsp), %rcx
+	movq ISTATE_OFFSET_RDX(%rsp), %rdx
+	movq ISTATE_OFFSET_RSI(%rsp), %rsi
+	movq ISTATE_OFFSET_RDI(%rsp), %rdi
+	movq ISTATE_OFFSET_R8(%rsp), %r8
+	movq ISTATE_OFFSET_R9(%rsp), %r9
+	movq ISTATE_OFFSET_R10(%rsp), %r10
+	movq ISTATE_OFFSET_R12(%rsp), %r12
+	movq ISTATE_OFFSET_R13(%rsp), %r13
+	movq ISTATE_OFFSET_R14(%rsp), %r14
+	movq ISTATE_OFFSET_R15(%rsp), %r15
+
+	movq ISTATE_OFFSET_RSP(%rsp), %rsp
 
 	sysretq
 
