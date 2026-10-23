@@ -109,6 +109,7 @@ const syscall_handler handlers[334] = {
     SYSCALL_ENTRY(read),
     SYSCALL_ENTRY(readlink),
     SYSCALL_ENTRY(rt_sigaction),
+	SYSCALL_ENTRY(set_tid_address),
     SYSCALL_ENTRY(stat),
     SYSCALL_ENTRY(sysinfo),
     SYSCALL_ENTRY(times),

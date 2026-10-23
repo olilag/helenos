@@ -49,6 +49,8 @@
 #include "linux/fs.h"
 #include "x86_64-linux-generic/asm/prctl.h"
 
+#include "lib/c/generic/private/thread.h"
+
 /* ------------------------- MACROS ----------------------------------------- */
 
 #define UTSLEN 65
@@ -402,5 +404,11 @@ DEFINE_LINUX_SYSCALL1(sysinfo, void*, info) {
 DEFINE_LINUX_SYSCALL4(prlimit64, long, pid, int, resource, void*, old_limit, void*, new_limit) {
 	long ret = 0;
 	LOG_SYSCALL("%ld, %d, %p, %p", pid, resource, old_limit, new_limit, ret);
+	return ret;
+}
+
+DEFINE_LINUX_SYSCALL1(set_tid_address, int*, address) {
+	long ret = thread_get_id();
+	LOG_SYSCALL("%p", address, ret);
 	return ret;
 }
