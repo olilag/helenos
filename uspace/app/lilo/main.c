@@ -114,6 +114,7 @@ const syscall_handler handlers[334] = {
     SYSCALL_ENTRY(sysinfo),
     SYSCALL_ENTRY(times),
     SYSCALL_ENTRY(uname),
+    SYSCALL_ENTRY(unlink),
     SYSCALL_ENTRY(wait4),
     SYSCALL_ENTRY(write),
     SYSCALL_ENTRY(writev),

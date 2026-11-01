@@ -412,3 +412,14 @@ DEFINE_LINUX_SYSCALL1(set_tid_address, int*, address) {
 	LOG_SYSCALL("%p", address, ret);
 	return ret;
 }
+
+DEFINE_LINUX_SYSCALL1(unlink, const char*, path) {
+    long ret = 0;
+
+    if (vfs_unlink_path(path) != EOK){
+		ret = -1;
+    }
+
+	LOG_SYSCALL("%s", path, ret);
+    return ret;
+}
