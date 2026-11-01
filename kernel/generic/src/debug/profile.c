@@ -49,8 +49,8 @@ void __cyg_profile_func_enter(void *fn, void *call_site)
 	const char *call_site_sym;
 	uintptr_t call_site_off;
 
-	if (symtab_name_lookup((uintptr_t) call_site, &call_site_sym,
-	    &call_site_off) == EOK)
+	if (symtab_name_lookup((uintptr_t) call_site, (void *)&call_site_sym,
+	    (void *)&call_site_off) == EOK)
 		printf("%s()+%p->%s()\n", call_site_sym,
 		    (void *) call_site_off, fn_sym);
 	else
@@ -64,8 +64,8 @@ void __cyg_profile_func_exit(void *fn, void *call_site)
 	const char *call_site_sym;
 	uintptr_t call_site_off;
 
-	if (symtab_name_lookup((uintptr_t) call_site, &call_site_sym,
-	    &call_site_off) == EOK)
+	if (symtab_name_lookup((uintptr_t) call_site, (void *)&call_site_sym,
+	    (void *)&call_site_off) == EOK)
 		printf("%s()+%p<-%s()\n", call_site_sym,
 		    (void *) call_site_off, fn_sym);
 	else
