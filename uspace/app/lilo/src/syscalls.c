@@ -239,6 +239,7 @@ DEFINE_LINUX_SYSCALL2(gettimeofday, void*, tv, void*, tz) {
  */
 DEFINE_LINUX_SYSCALL3(readlink, char*, path, char*, buf, size_t, bufsz)
 {
+    return (long)-22;
 	if (path == NULL || buf == NULL) {
 		return (long) -1;
 	}
