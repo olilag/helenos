@@ -252,14 +252,15 @@ finish:
     return ret;
 }
 
-DEFINE_LINUX_SYSCALL2(arch_prctl, long, operation, long, addr)
+DEFINE_LINUX_SYSCALL2(arch_prctl, long, operation, unsigned long, addr)
 {
         long ret;
         const char __debugonly *op = "";
         switch (operation) {
         case ARCH_GET_FS:
                 op = nameof(ARCH_GET_FS);
-                ret = masq->fsbase;
+                *(unsigned long*)addr = masq->fsbase;
+                ret = EOK;
                 break;
         case ARCH_SET_FS:
                 op = nameof(ARCH_SET_FS);
@@ -268,7 +269,8 @@ DEFINE_LINUX_SYSCALL2(arch_prctl, long, operation, long, addr)
                 break;
         case ARCH_GET_GS:
                 op = nameof(ARCH_GET_GS);
-                ret = masq->gsbase;
+                *(unsigned long*)addr = masq->gsbase;
+                ret = EOK;
                 break;
         case ARCH_SET_GS:
                 op = nameof(ARCH_SET_GS);
