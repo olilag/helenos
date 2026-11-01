@@ -413,6 +413,17 @@ DEFINE_LINUX_SYSCALL1(set_tid_address, int*, address) {
 	return ret;
 }
 
+#define _SIGSET_NWORDS (1024 / (8 * sizeof (unsigned long int)))
+typedef struct {
+  unsigned long int __val[_SIGSET_NWORDS];
+} sigset_t;
+
+DEFINE_LINUX_SYSCALL3(rt_sigprocmask, int, how, const sigset_t*, set, sigset_t*, oldset) {
+    long ret = -1;
+	LOG_SYSCALL("%d, %p", how, set, ret);
+    return ret;
+}
+
 DEFINE_LINUX_SYSCALL1(unlink, const char*, path) {
     long ret = 0;
 
