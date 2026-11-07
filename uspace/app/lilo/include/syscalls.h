@@ -5,62 +5,71 @@
 
 #define __unused __attribute__((unused))
 
+long translate_error_code(long ret);
+
 #define DECLARE_LINUX_SYSCALL(name) \
-        long sys_##name(long a1, long a2, long a3, long a4, long a5, long a6, masq_t *masq)
+    long sys_##name(long a1, long a2, long a3, long a4, long a5, long a6, masq_t *masq)
 
 #define DEFINE_LINUX_SYSCALL0(name) \
-        static sysarg_t linux_syscall_##name(masq_t*); \
-        DECLARE_LINUX_SYSCALL(name) {                       \
-               return linux_syscall_##name(masq);                     \
-	}                                  \
-        sysarg_t linux_syscall_##name(masq_t *masq)
+    static sysarg_t linux_syscall_##name(masq_t*); \
+    DECLARE_LINUX_SYSCALL(name) { \
+        long ret = linux_syscall_##name(masq); \
+        return translate_error_code(ret); \
+	} \
+    sysarg_t linux_syscall_##name(masq_t *masq)
 
 #define DEFINE_LINUX_SYSCALL1(name, p1t, p1n) \
-        static sysarg_t linux_syscall_##name(p1t, masq_t*); \
-        DECLARE_LINUX_SYSCALL(name) {         \
-                return linux_syscall_##name((p1t) a1, masq);                   \
+    static sysarg_t linux_syscall_##name(p1t, masq_t*); \
+    DECLARE_LINUX_SYSCALL(name) { \
+        long ret = linux_syscall_##name((p1t) a1, masq); \
+        return translate_error_code(ret); \
 	} \
-        sysarg_t linux_syscall_##name(p1t p1n, masq_t *masq)
+    sysarg_t linux_syscall_##name(p1t p1n, masq_t *masq)
 
 #define DEFINE_LINUX_SYSCALL2(name, p1t, p1n, p2t, p2n) \
-        static sysarg_t linux_syscall_##name(p1t, p2t, masq_t*); \
-        DECLARE_LINUX_SYSCALL(name) {         \
-                return linux_syscall_##name((p1t) a1, (p2t) a2, masq);         \
+    static sysarg_t linux_syscall_##name(p1t, p2t, masq_t*); \
+    DECLARE_LINUX_SYSCALL(name) { \
+        long ret = linux_syscall_##name((p1t) a1, (p2t) a2, masq); \
+        return translate_error_code(ret); \
 	} \
-        sysarg_t linux_syscall_##name(p1t p1n, p2t p2n, masq_t *masq)
+    sysarg_t linux_syscall_##name(p1t p1n, p2t p2n, masq_t *masq)
 
 #define DEFINE_LINUX_SYSCALL3(name, p1t, p1n, p2t, p2n, p3t, p3n) \
-        static sysarg_t linux_syscall_##name(p1t, p2t, p3t, masq_t*); \
-        DECLARE_LINUX_SYSCALL(name) {         \
-                return linux_syscall_##name((p1t) a1, (p2t) a2, (p3t) a3, masq);         \
+    static sysarg_t linux_syscall_##name(p1t, p2t, p3t, masq_t*); \
+    DECLARE_LINUX_SYSCALL(name) { \
+        long ret = linux_syscall_##name((p1t) a1, (p2t) a2, (p3t) a3, masq); \
+        return translate_error_code(ret); \
 	} \
-        sysarg_t linux_syscall_##name(p1t p1n, p2t p2n, p3t p3n, masq_t *masq)
+    sysarg_t linux_syscall_##name(p1t p1n, p2t p2n, p3t p3n, masq_t *masq)
 
 #define DEFINE_LINUX_SYSCALL4(name, p1t, p1n, p2t, p2n, p3t, p3n, p4t, p4n) \
-        static sysarg_t linux_syscall_##name(p1t, p2t, p3t, p4t, masq_t*); \
-        DECLARE_LINUX_SYSCALL(name) {         \
-                return linux_syscall_##name((p1t) a1, (p2t) a2, (p3t) a3, (p4t) a4, masq);         \
+    static sysarg_t linux_syscall_##name(p1t, p2t, p3t, p4t, masq_t*); \
+    DECLARE_LINUX_SYSCALL(name) { \
+        long ret = linux_syscall_##name((p1t) a1, (p2t) a2, (p3t) a3, (p4t) a4, masq); \
+        return translate_error_code(ret); \
 	} \
-        sysarg_t linux_syscall_##name(p1t p1n, p2t p2n, p3t p3n, p4t p4n, masq_t *masq)
+    sysarg_t linux_syscall_##name(p1t p1n, p2t p2n, p3t p3n, p4t p4n, masq_t *masq)
 
 #define DEFINE_LINUX_SYSCALL5(name, p1t, p1n, p2t, p2n, p3t, p3n, p4t, p4n, p5t, p5n) \
-        static sysarg_t linux_syscall_##name(p1t, p2t, p3t, p4t, p5t, masq_t*); \
-        DECLARE_LINUX_SYSCALL(name) {         \
-                return linux_syscall_##name((p1t) a1, (p2t) a2, (p3t) a3, (p4t) a4, (p5t) a5, masq);         \
+    static sysarg_t linux_syscall_##name(p1t, p2t, p3t, p4t, p5t, masq_t*); \
+    DECLARE_LINUX_SYSCALL(name) { \
+        long ret = linux_syscall_##name((p1t) a1, (p2t) a2, (p3t) a3, (p4t) a4, (p5t) a5, masq); \
+        return translate_error_code(ret); \
 	} \
-        sysarg_t linux_syscall_##name(p1t p1n, p2t p2n, p3t p3n, p4t p4n, p5t p5n, masq_t *masq)
+    sysarg_t linux_syscall_##name(p1t p1n, p2t p2n, p3t p3n, p4t p4n, p5t p5n, masq_t *masq)
 
 #define DEFINE_LINUX_SYSCALL6(name, p1t, p1n, p2t, p2n, p3t, p3n, p4t, p4n, p5t, p5n, p6t, p6n) \
-        static sysarg_t linux_syscall_##name(p1t, p2t, p3t, p4t, p5t, p6t, masq_t*); \
-        DECLARE_LINUX_SYSCALL(name) {         \
-                return linux_syscall_##name((p1t) a1, (p2t) a2, (p3t) a3, (p4t) a4, (p5t) a5, (p6t) a6, masq);         \
+    static sysarg_t linux_syscall_##name(p1t, p2t, p3t, p4t, p5t, p6t, masq_t*); \
+    DECLARE_LINUX_SYSCALL(name) { \
+        long ret = linux_syscall_##name((p1t) a1, (p2t) a2, (p3t) a3, (p4t) a4, (p5t) a5, (p6t) a6, masq); \
+        return translate_error_code(ret); \
 	} \
-        sysarg_t linux_syscall_##name(p1t p1n, p2t p2n, p3t p3n, p4t p4n, p5t p5n, p6t p6n, masq_t *masq)
+    sysarg_t linux_syscall_##name(p1t p1n, p2t p2n, p3t p3n, p4t p4n, p5t p5n, p6t p6n, masq_t *masq)
 
 #define nameof(x) #x
 #define quote_me(x) nameof(x)
 
-#define NDEBUG
+// #define NDEBUG
 #ifndef NDEBUG
 #define DPRINTF(msg, ...) printf(msg, __VA_ARGS__)
 #define __debugonly

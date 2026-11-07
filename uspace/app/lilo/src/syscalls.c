@@ -39,6 +39,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <mem.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <str.h>
 #include <vfs/vfs.h>
@@ -91,7 +92,49 @@ const struct utsname my_utsname = {
     .machine = "x86_64",
 };
 
+#undef __entry
+#define __entry(name, linux_num) name,
+
+static const int err_num[] = {
+#include "errno_map.in"
+};
+
+#undef __entry
+#define __entry(name, linux_num) linux_num,
+
+static const int err_map[] = {
+#include "errno_map.in"
+};
+
 /* ------------------------- PUBLIC FUNCTION DEFINITIONS -------------------- */
+
+static int find_errno(int e) {
+    int len = sizeof(err_num) / sizeof(errno_t);
+
+	for (int i = 0; i < len; i++) {
+		if (err_num[i] == e) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+long translate_error_code(long ret) {
+    if (ret >= 0) {
+        return ret;
+    }
+
+    int idx = find_errno(-ret);
+    if (idx == -1) {
+        // unknown error code
+        DPRINTF("unknown error code %lu\n", -ret);
+        assert(false);
+        return -131;
+    }
+    int linux_err = err_map[idx];
+    return -linux_err;
+}
 
 DEFINE_LINUX_SYSCALL0(geteuid) {
 	const long ret = 0;
@@ -138,7 +181,19 @@ DEFINE_LINUX_SYSCALL1(uname, struct utsname*, req) {
 }
 
 DEFINE_LINUX_SYSCALL1(close, int, fd) {
-    const long ret = 0;
+    long ret = 0;
+    openedfile_t *file = openedfile_get_by_fd(fd);
+    if (file == NULL) {
+        return -EBADF;
+    }
+
+    ret = vfs_put(file->vfs.handle);
+    if (ret != EOK) {
+        ret = -ret;
+    }
+
+    openedfile_release(fd);
+
     LOG_SYSCALL("%d", fd, ret);
     return ret;
 }
@@ -216,7 +271,7 @@ DEFINE_LINUX_SYSCALL2(gettimeofday, void*, tv, void*, tz) {
  * @return See man 2 readlink
  */
 DEFINE_LINUX_SYSCALL3(readlink, char*, path, char*, buf, size_t, bufsz) {
-    return (long)-22; // einval
+    return -EINVAL;
 	if (path == NULL || buf == NULL) {
 		return (long) -1;
 	}
