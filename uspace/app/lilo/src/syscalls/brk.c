@@ -40,8 +40,7 @@
 uint8_t *break_area = NULL;
 size_t break_area_size = 0;
 
-#define BRK_ERROR ((sysarg_t) -1)
-#define BRK_OK ((sysarg_t) (break_area + break_area_size))
+#define BRK_RET ((sysarg_t) (break_area + break_area_size))
 
 
 DEFINE_LINUX_SYSCALL1(brk, const uint8_t *, addr) {
@@ -51,36 +50,32 @@ DEFINE_LINUX_SYSCALL1(brk, const uint8_t *, addr) {
 			break_area = as_area_create(AS_AREA_ANY, 4096, AS_AREA_READ | AS_AREA_WRITE | AS_AREA_CACHEABLE, 0);
 			if (break_area == AS_MAP_FAILED) {
 				break_area = NULL;
-				return BRK_ERROR;
+				goto finish;
 			}
 			break_area_size = 4096;
 		}
 
-		ret = BRK_OK;
 		goto finish;
 	}
 
 	if (addr < break_area) {
-		ret = BRK_ERROR;
 		goto finish;
 	}
 
 	size_t new_size = addr - break_area;
 	if (new_size <= break_area_size) {
-		ret = BRK_OK;
 		goto finish;
 	}
 
 	int rc = as_area_resize(break_area, new_size, 0);
 	if (rc != EOK) {
-		ret = BRK_ERROR;
 		goto finish;
 	}
 
 	break_area_size = new_size;
 
 finish:
-	ret = BRK_OK;
+	ret = BRK_RET;
 	LOG_SYSCALL("%p", addr, ret);
 	return ret;
 }
