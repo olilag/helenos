@@ -39,19 +39,17 @@
 #include "syscalls.h"
 #include "files.h"
 
-#define FLAG_IS_SET(where, flag) \
-	(((where) & (flag)) == (flag))
+#define FLAG_IS_SET(where, flag) (((where) & (flag)) == (flag))
 
 
-DEFINE_LINUX_SYSCALL2(access, const char *, filename, int, mode)
-{
+DEFINE_LINUX_SYSCALL2(access, const char *, filename, int, mode) {
 	long ret = 0;
 	int handle;
 	const errno_t rc = vfs_lookup(filename, WALK_REGULAR, &handle);
 	if (rc != EOK) {
-		ret = -ENOENT;
+		ret = -rc;
 	} else {
-	        vfs_put(handle);
+        vfs_put(handle);
 	}
 
 	LOG_SYSCALL("%s, %d", filename, mode, ret);

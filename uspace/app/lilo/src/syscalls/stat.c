@@ -94,6 +94,7 @@ DEFINE_LINUX_SYSCALL2(stat, char*, filename, struct stat*, stat) {
     vfs_stat_t hst;
     ret = vfs_stat_path(filename, &hst);
     if (ret != EOK) {
+        ret = -ret;
         goto finish;
     }
 
@@ -111,6 +112,7 @@ DEFINE_LINUX_SYSCALL2(fstat, int, fd, void*, stat)
     vfs_stat_t hst;
     ret = vfs_stat(fd, &hst);
     if (ret != EOK) {
+        ret = -ret;
         goto finish;
     }
 
@@ -127,6 +129,7 @@ DEFINE_LINUX_SYSCALL2(lstat, char*, filename, void*, stat) {
     vfs_stat_t hst;
     ret = vfs_stat_path(filename, &hst);
     if (ret != EOK) {
+        ret = -ret;
         goto finish;
     }
 

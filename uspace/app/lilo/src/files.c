@@ -55,52 +55,45 @@ static openedfile_t files[MAX_FILES] = {
 	}
 };
 
-static ssize_t read_regular_file(openedfile_t *file, void *buffer, size_t size)
-{
+static ssize_t read_regular_file(openedfile_t *file, void *buffer, size_t size) {
 	assert(file->type == FILE_TYPE_REGULAR_FILE);
-        size_t nbyte;
-        const unsigned long rc = vfs_read(file->vfs.handle, &file->vfs.position, buffer, size, &nbyte);
-	return (rc == EOK) ? nbyte : rc;
+    size_t nbyte;
+    const unsigned long rc = vfs_read(file->vfs.handle, &file->vfs.position, buffer, size, &nbyte);
+	return (rc == EOK) ? nbyte : -rc;
 }
 
-static ssize_t read_unimplemented(openedfile_t *file, void *buffer, size_t size)
-{
+static ssize_t read_unimplemented(openedfile_t *file, void *buffer, size_t size) {
 	assert(file->type != FILE_TYPE_REGULAR_FILE);
-	return ENOTSUP;
+	return -ENOTSUP;
 }
 
-static ssize_t write_regular_file(openedfile_t *file, void *buffer, size_t size)
-{
+static ssize_t write_regular_file(openedfile_t *file, void *buffer, size_t size) {
 	assert(file->type == FILE_TYPE_REGULAR_FILE);
 	size_t nbyte;
 	const unsigned long rc = vfs_write(file->vfs.handle, &file->vfs.position, buffer, size, &nbyte);
-	return (rc == EOK) ? nbyte : rc;
+	return (rc == EOK) ? nbyte : -rc;
 }
 
-static ssize_t write_stdout(openedfile_t *file, void *buffer, size_t size)
-{
+static ssize_t write_stdout(openedfile_t *file, void *buffer, size_t size) {
 	assert(file->type == FILE_TYPE_STDOUTS);
 	return fwrite(buffer, 1, size, *(file->stdio));
 }
 
-static ssize_t write_unimplemented(openedfile_t *file, void *buffer, size_t size)
-{
+static ssize_t write_unimplemented(openedfile_t *file, void *buffer, size_t size) {
 	assert(file->type != FILE_TYPE_REGULAR_FILE);
-	return ENOTSUP;
+	return -ENOTSUP;
 }
 
 int openedfile_dup2(int fd1, int fd2) {
-        if ((fd1 < 0) || (fd1 >= MAX_FILES)
-	    || (fd2 < 0) || (fd2 >= MAX_FILES)) {
-                return -1;
-        }
+    if ((fd1 < 0) || (fd1 >= MAX_FILES) || (fd2 < 0) || (fd2 >= MAX_FILES)) {
+        return -EBADF;
+    }
 	// TODO: vfs_put the file if it is not opened anywhere else
 	files[fd2] = files[fd1];
 	return fd2;
 }
 
-openedfile_t* openedfile_get_by_fd(int fd)
-{
+openedfile_t* openedfile_get_by_fd(int fd) {
 	if ((fd < 0) || (fd >= MAX_FILES)) {
 		return NULL;
 	}
@@ -111,8 +104,7 @@ openedfile_t* openedfile_get_by_fd(int fd)
 	return res;
 }
 
-int openedfile_get_free_fd(openedfile_t **res)
-{
+int openedfile_get_free_fd(openedfile_t **res) {
 	for (int i = 0; i < MAX_FILES; i++) {
 		if (!files[i].used) {
 			*res = &files[i];
@@ -122,12 +114,11 @@ int openedfile_get_free_fd(openedfile_t **res)
 	return -1;
 }
 
-void openedfile_release(int fd)
-{
+void openedfile_release(int fd) {
 	if ((fd < 0) || (fd >= MAX_FILES)) {
 		return;
 	}
-	
+
 	files[fd].used = 0;
 }
 

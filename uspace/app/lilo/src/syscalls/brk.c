@@ -36,7 +36,6 @@
 #include <errno.h>
 
 #include "syscalls.h"
-#include "files.h"
 
 uint8_t *break_area = NULL;
 size_t break_area_size = 0;
@@ -45,8 +44,7 @@ size_t break_area_size = 0;
 #define BRK_OK ((sysarg_t) (break_area + break_area_size))
 
 
-DEFINE_LINUX_SYSCALL1(brk, const uint8_t *, addr)
-{
+DEFINE_LINUX_SYSCALL1(brk, const uint8_t *, addr) {
 	long ret;
 	if (addr == NULL) {
 		if (break_area == NULL) {

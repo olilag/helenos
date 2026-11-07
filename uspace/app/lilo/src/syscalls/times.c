@@ -47,9 +47,7 @@ struct tms {
 
 static clock_t counter = 0;
 
-DEFINE_LINUX_SYSCALL1(times, struct tms *, tms)
-{
-
+DEFINE_LINUX_SYSCALL1(times, struct tms *, tms) {
 	// FIXME: count the time properly :-)
 	counter += 100;
 

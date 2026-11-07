@@ -31,7 +31,6 @@
  */
 
 #include <stddef.h>
-#include <stdio.h>
 #include <ipc/vfs.h>
 #include <errno.h>
 
@@ -39,19 +38,17 @@
 #include "syscalls.h"
 #include "files.h"
 
-#define FLAG_IS_SET(where, flag) \
-	(((where) & (flag)) == (flag))
+#define FLAG_IS_SET(where, flag) (((where) & (flag)) == (flag))
 
-static sysarg_t do_open(const char* filename, int open_flags, int permissions)
-{
+static sysarg_t do_open(const char* filename, int open_flags, int permissions) {
 	//logger(LVL_DEBUG, "open(\"%s\", %d, %d)", filename, open_flags, permissions);
-	
+
 	openedfile_t *file = NULL;
 	int fd = openedfile_get_free_fd(&file);
 	if (fd < 0) {
 		return -EMFILE;
 	}
-	
+
 	int lookup_flags = WALK_REGULAR;
 	if (open_flags & LINUX_O_CREAT) {
 		if (open_flags & LINUX_O_EXCL) {
@@ -63,10 +60,10 @@ static sysarg_t do_open(const char* filename, int open_flags, int permissions)
 
 	errno_t rc = vfs_lookup(filename, lookup_flags, &file->vfs.handle);
 	if (rc != EOK) {
-		DPRINTF("Lookup %s failed!", filename);
-		return -EINVAL;
+		DPRINTF("Lookup %s failed!\n", filename);
+		return -rc;
 	}
-	
+
 	int open_mode =
 	    ((open_flags & LINUX_O_RDWR) ? MODE_READ | MODE_WRITE : 0) |
 	    ((open_flags & LINUX_O_RDONLY) ? MODE_READ : 0) |
@@ -75,31 +72,31 @@ static sysarg_t do_open(const char* filename, int open_flags, int permissions)
 	if ((open_mode == 0) & (FLAG_IS_SET(open_flags, LINUX_O_RDONLY))) {
 		open_mode = MODE_READ;
 	}
-	
+
 	rc = vfs_open(file->vfs.handle, open_mode);
 	if (rc != EOK) {
 		vfs_put(file->vfs.handle);
-		DPRINTF("Opening %s failed!", filename);
-		return -EINVAL;
+		DPRINTF("Opening %s failed!\n", filename);
+		return -rc;
 	}
-	
+
 	if (open_flags & LINUX_O_TRUNC) {
 		if (open_flags & (LINUX_O_RDWR | LINUX_O_WRONLY)) {
 			rc = vfs_resize(file->vfs.handle, 0);
 			if (rc != EOK) {
 				vfs_put(file->vfs.handle);
-				return -EINVAL;
+				return -rc;
 			}
 		}
 	}
 
-	
+
 	file->vfs.position = 0;
 	file->type = FILE_TYPE_REGULAR_FILE;
 
 	// Last operation: mark the file as used
 	file->used = 1;
-	
+
 	return fd;
 }
 
@@ -110,8 +107,8 @@ DEFINE_LINUX_SYSCALL3(open, const char *, filename, int, open_flags, int, permis
 }
 
 DEFINE_LINUX_SYSCALL4(openat, int, fd, const char *, filename, int, open_flags, int, permissions) {
-        const long ret = do_open(filename, open_flags, permissions);
-        LOG_SYSCALL("%d, %s, %X, %X", fd, filename, open_flags, permissions, ret);
+    const long ret = do_open(filename, open_flags, permissions);
+    LOG_SYSCALL("%d, %s, %X, %X", fd, filename, open_flags, permissions, ret);
 	return ret;
 }
 

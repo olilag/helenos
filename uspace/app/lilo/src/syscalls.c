@@ -191,7 +191,10 @@ DEFINE_LINUX_SYSCALL2(dup2, int, fd1, int, fd2) {
 }
 
 DEFINE_LINUX_SYSCALL2(getcwd, char*, buff, size_t, length) {
-    const long ret = vfs_cwd_get(buff, length) == EOK ? 0 : -1;
+    long ret = vfs_cwd_get(buff, length);
+    if (ret != EOK) {
+        ret = -ret;
+    }
     LOG_SYSCALL("%p, %ld", buff, length, ret);
     return ret;
 }
@@ -359,7 +362,7 @@ DEFINE_LINUX_SYSCALL1(wait4, long, pid) {
 	rc = task_wait(&wait, &ex, &rr);
 	assert(rc == EOK);
 	assert(ex == TASK_EXIT_NORMAL);
-        LOG_SYSCALL("%ld", pid, ret);
+    LOG_SYSCALL("%ld", pid, ret);
 	return ret;
 }
 
@@ -393,12 +396,10 @@ DEFINE_LINUX_SYSCALL3(rt_sigprocmask, int, how, const sigset_t*, set, sigset_t*,
 }
 
 DEFINE_LINUX_SYSCALL1(unlink, const char*, path) {
-    long ret = 0;
-
-    if (vfs_unlink_path(path) != EOK) {
-		ret = -1;
+    long ret = vfs_unlink_path(path);
+    if (ret != EOK) {
+		ret = -ret;
     }
-
 	LOG_SYSCALL("%s", path, ret);
     return ret;
 }
