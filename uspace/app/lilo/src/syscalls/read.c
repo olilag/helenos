@@ -38,11 +38,47 @@
 #include "syscalls.h"
 #include "files.h"
 
-DEFINE_LINUX_SYSCALL3(read, int, fd, char *, buf, size_t, size)
-{
+struct iovec {
+	void *iov_base;
+	size_t iov_len;
+};
+
+DEFINE_LINUX_SYSCALL3(read, int, fd, char *, buf, size_t, size) {
 	openedfile_t *file = openedfile_get_by_fd(fd);
 	const long ret = (file == NULL) ? -EBADF : openedfile_ops[file->type].read(file, buf, size);
 	LOG_SYSCALL("%d, %p, %ld", fd, buf, size, ret);
+	return ret;
+}
+
+DEFINE_LINUX_SYSCALL3(readv, int, fd, const struct iovec *, iov, int, count) {
+	openedfile_t *file = openedfile_get_by_fd(fd);
+	if (file == NULL) {
+		return -EBADF;
+	}
+
+	int ret = 0;
+	for (int i = 0; i < count; i++) {
+		if (iov[i].iov_len == 0) {
+			continue;
+		}
+		ssize_t read = openedfile_ops[file->type].read(file, iov[i].iov_base, iov[i].iov_len);
+		if (read <= 0) {
+			if (ret > 0) {
+				// Managed to read at least something. We will report
+				// the error next time.
+				return ret;
+			} else {
+				return read;
+			}
+		}
+
+		ret += read;
+		if ((size_t) read != iov[i].iov_len) {
+			// Not read the whole block, need to tell caller
+			return ret;
+		}
+	}
+
 	return ret;
 }
 
