@@ -37,8 +37,7 @@ src = files(
         'src/syscalls/open.c',
         'src/syscalls/read.c',
         'src/syscalls/times.c',
-        'src/syscalls/write.c',
-        'src/syscalls/writev.c')
+        'src/syscalls/write.c')
 
 link_args += [ '-Wl,-Ttext-segment=0x7FF00000' ]
 c_args += [ '-mgeneral-regs-only' ]
