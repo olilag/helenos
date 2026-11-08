@@ -1,6 +1,9 @@
 /* helenos errno name, linux value */
 __entry(ENOENT, 2)
 __entry(ENOMEM, 12)
+__entry(ENOTSUP, 95)
 __entry(EINVAL, 22)
-__entry(ENOSPC, 28)
+__entry(EMFILE, 28)
+__entry(ENOSPC, 24)
+__entry(EBADF, 9)
 __entry(ENOTTY, 25)

@@ -1,7 +1,9 @@
 #include <errno.h>
 #include <mem.h>
+#include <stdio.h>
 #include <vfs/vfs.h>
 
+#include "files.h"
 #include "syscalls.h"
 
 struct stat {
@@ -101,16 +103,34 @@ DEFINE_LINUX_SYSCALL2(stat, char*, filename, struct stat*, stat) {
     ret = stat_to_posix(stat, &hst);
 
 finish:
-    LOG_SYSCALL("%s, %p", filename, stat, ret);
+    LOG_SYSCALL("%s, {st_size=%ld}", filename, stat->st_size, ret);
     return ret;
 }
 
-DEFINE_LINUX_SYSCALL2(fstat, int, fd, void*, stat)
-{
+DEFINE_LINUX_SYSCALL2(fstat, int, fd, struct stat*, stat) {
     long ret = 0;
 
+    int vfs_handle;
+    openedfile_t *file = openedfile_get_by_fd(fd);
+	if (file == NULL) {
+		ret = -EBADF;
+		goto finish;
+	}
+	switch (file->type) {
+	case FILE_TYPE_STDIN:
+	case FILE_TYPE_STDOUTS:
+	    vfs_handle = fileno(*(file->stdio));
+		break;
+	case FILE_TYPE_REGULAR_FILE:
+	    vfs_handle = file->vfs.handle;
+		break;
+	default:
+        ret = -EBADF;
+        goto finish;
+	}
+
     vfs_stat_t hst;
-    ret = vfs_stat(fd, &hst);
+    ret = vfs_stat(vfs_handle, &hst);
     if (ret != EOK) {
         ret = -ret;
         goto finish;
@@ -119,11 +139,11 @@ DEFINE_LINUX_SYSCALL2(fstat, int, fd, void*, stat)
     ret = stat_to_posix(stat, &hst);
 
 finish:
-    LOG_SYSCALL("%d, %p", fd, stat, ret);
+    LOG_SYSCALL("%d, {st_size=%ld}", fd, stat->st_size, ret);
     return ret;
 }
 
-DEFINE_LINUX_SYSCALL2(lstat, char*, filename, void*, stat) {
+DEFINE_LINUX_SYSCALL2(lstat, char*, filename, struct stat*, stat) {
     long ret = 0;
 
     vfs_stat_t hst;
@@ -136,6 +156,6 @@ DEFINE_LINUX_SYSCALL2(lstat, char*, filename, void*, stat) {
     ret = stat_to_posix(stat, &hst);
 
 finish:
-    LOG_SYSCALL("%s, %p", filename, stat, ret);
+    LOG_SYSCALL("%s, {st_size=%ld}", filename, stat->st_size, ret);
     return ret;
 }

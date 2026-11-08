@@ -182,18 +182,37 @@ DEFINE_LINUX_SYSCALL1(uname, struct utsname*, req) {
 
 DEFINE_LINUX_SYSCALL1(close, int, fd) {
     long ret = 0;
-    openedfile_t *file = openedfile_get_by_fd(fd);
-    if (file == NULL) {
-        return -EBADF;
-    }
 
-    ret = vfs_put(file->vfs.handle);
+    int vfs_handle;
+    openedfile_t *file = openedfile_get_by_fd(fd);
+	if (file == NULL) {
+		ret = -EBADF;
+		goto finish;
+	}
+	switch (file->type) {
+	case FILE_TYPE_STDIN:
+	case FILE_TYPE_STDOUTS:
+	    vfs_handle = fileno(*(file->stdio));
+		break;
+	case FILE_TYPE_REGULAR_FILE:
+	    vfs_handle = file->vfs.handle;
+		break;
+	default:
+        ret = -EBADF;
+        goto finish;
+	}
+
+    ret = vfs_put(vfs_handle);
     if (ret != EOK) {
         ret = -ret;
+        goto finish;
     }
 
-    openedfile_release(fd);
+    if (file->type == FILE_TYPE_REGULAR_FILE) {
+        openedfile_release(fd);
+    }
 
+finish:
     LOG_SYSCALL("%d", fd, ret);
     return ret;
 }
