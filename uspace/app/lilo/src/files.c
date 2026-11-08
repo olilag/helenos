@@ -30,7 +30,7 @@
  * @{
  */
 
-#include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
 
 #include "files.h"
@@ -62,9 +62,14 @@ static ssize_t read_regular_file(openedfile_t *file, void *buffer, size_t size) 
 	return (rc == EOK) ? nbyte : -rc;
 }
 
-static ssize_t read_unimplemented(openedfile_t *file, void *buffer, size_t size) {
-	assert(file->type != FILE_TYPE_REGULAR_FILE);
-	return -ENOTSUP;
+static ssize_t read_stdin(openedfile_t *file, void *buffer, size_t size) {
+	assert(file->type == FILE_TYPE_STDIN);
+	return fread(buffer, 1, size, *(file->stdio));
+}
+
+static ssize_t read_stdout(openedfile_t *file, void *buffer, size_t size) {
+	assert(file->type == FILE_TYPE_STDOUTS);
+	return -EBADF;
 }
 
 static ssize_t write_regular_file(openedfile_t *file, void *buffer, size_t size) {
@@ -79,9 +84,9 @@ static ssize_t write_stdout(openedfile_t *file, void *buffer, size_t size) {
 	return fwrite(buffer, 1, size, *(file->stdio));
 }
 
-static ssize_t write_unimplemented(openedfile_t *file, void *buffer, size_t size) {
-	assert(file->type != FILE_TYPE_REGULAR_FILE);
-	return -ENOTSUP;
+static ssize_t write_stdin(openedfile_t *file, void *buffer, size_t size) {
+	assert(file->type == FILE_TYPE_STDIN);
+	return -EBADF;
 }
 
 int openedfile_dup2(int fd1, int fd2) {
@@ -126,12 +131,12 @@ void openedfile_release(int fd) {
 openedfile_ops_t openedfile_ops[] = {
 	// FILE_TYPE_STDIN
 	{
-		.read = read_unimplemented,
-		.write = write_unimplemented
+		.read = read_stdin,
+		.write = write_stdin
 	},
 	// FILE_TYPE_STDOUTS
 	{
-		.read = read_unimplemented,
+		.read = read_stdout,
 		.write = write_stdout
 	},
 	// FILE_TYPE_REGULAR_FILE
