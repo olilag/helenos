@@ -76,7 +76,7 @@ DEFINE_LINUX_SYSCALL1(brk, const uint8_t *, addr) {
 
 finish:
 	ret = BRK_RET;
-	LOG_SYSCALL("%p", addr, ret);
+	LOG_SYSCALL(ret, "%p", addr);
 	return ret;
 }
 

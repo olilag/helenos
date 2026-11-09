@@ -103,7 +103,7 @@ DEFINE_LINUX_SYSCALL2(stat, char*, filename, struct stat*, stat) {
     ret = stat_to_posix(stat, &hst);
 
 finish:
-    LOG_SYSCALL("%s, {st_size=%ld}", filename, stat->st_size, ret);
+    LOG_SYSCALL(ret, "%s, {st_size=%ld}", filename, stat->st_size);
     return ret;
 }
 
@@ -139,7 +139,7 @@ DEFINE_LINUX_SYSCALL2(fstat, int, fd, struct stat*, stat) {
     ret = stat_to_posix(stat, &hst);
 
 finish:
-    LOG_SYSCALL("%d, {st_size=%ld}", fd, stat->st_size, ret);
+    LOG_SYSCALL(ret, "%d, {st_size=%ld}", fd, stat->st_size);
     return ret;
 }
 
@@ -156,6 +156,6 @@ DEFINE_LINUX_SYSCALL2(lstat, char*, filename, struct stat*, stat) {
     ret = stat_to_posix(stat, &hst);
 
 finish:
-    LOG_SYSCALL("%s, {st_size=%ld}", filename, stat->st_size, ret);
+    LOG_SYSCALL(ret, "%s, {st_size=%ld}", filename, stat->st_size);
     return ret;
 }

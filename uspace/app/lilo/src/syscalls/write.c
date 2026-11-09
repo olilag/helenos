@@ -46,7 +46,7 @@ struct iovec {
 DEFINE_LINUX_SYSCALL3(write, int, fd, char *, buf, size_t, size) {
 	openedfile_t *file = openedfile_get_by_fd(fd);
 	const long ret = (file == NULL) ? -EBADF : openedfile_ops[file->type].write(file, buf, size);
-	LOG_SYSCALL("%d, %p, %ld", fd, buf, size, ret);
+	LOG_SYSCALL(ret, "%d, %p, %ld", fd, buf, size);
 	return ret;
 }
 

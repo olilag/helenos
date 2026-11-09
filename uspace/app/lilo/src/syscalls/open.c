@@ -60,7 +60,7 @@ static sysarg_t do_open(const char* filename, int open_flags, int permissions) {
 
 	errno_t rc = vfs_lookup(filename, lookup_flags, &file->vfs.handle);
 	if (rc != EOK) {
-		DPRINTF("Lookup %s failed!\n", filename);
+		// DPRINTF("Lookup %s failed!\n", filename);
 		return -rc;
 	}
 
@@ -76,7 +76,7 @@ static sysarg_t do_open(const char* filename, int open_flags, int permissions) {
 	rc = vfs_open(file->vfs.handle, open_mode);
 	if (rc != EOK) {
 		vfs_put(file->vfs.handle);
-		DPRINTF("Opening %s failed!\n", filename);
+		// DPRINTF("Opening %s failed!\n", filename);
 		return -rc;
 	}
 
@@ -102,13 +102,13 @@ static sysarg_t do_open(const char* filename, int open_flags, int permissions) {
 
 DEFINE_LINUX_SYSCALL3(open, const char *, filename, int, open_flags, int, permissions) {
 	const long ret = do_open(filename, open_flags, permissions);
-	LOG_SYSCALL("%s, %X, %X", filename, open_flags, permissions, ret);
+	LOG_SYSCALL(ret, "%s, %X, %X", filename, open_flags, permissions);
 	return ret;
 }
 
 DEFINE_LINUX_SYSCALL4(openat, int, fd, const char *, filename, int, open_flags, int, permissions) {
     const long ret = do_open(filename, open_flags, permissions);
-    LOG_SYSCALL("%d, %s, %X, %X", fd, filename, open_flags, permissions, ret);
+    LOG_SYSCALL(ret, "%d, %s, %X, %X", fd, filename, open_flags, permissions);
 	return ret;
 }
 

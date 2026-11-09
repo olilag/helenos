@@ -138,37 +138,37 @@ long translate_error_code(long ret) {
 
 DEFINE_LINUX_SYSCALL0(geteuid) {
 	const long ret = 0;
-	LOG_SYSCALL("", ret);
+	LOG_SYSCALL(ret, "");
 	return ret;
 }
 
 DEFINE_LINUX_SYSCALL0(getegid) {
 	const long ret = 0;
-	LOG_SYSCALL("", ret);
+	LOG_SYSCALL(ret, "");
 	return ret;
 }
 
 DEFINE_LINUX_SYSCALL0(getuid) {
 	const long ret = 0;
-	LOG_SYSCALL("", ret);
+	LOG_SYSCALL(ret, "");
 	return ret;
 }
 
 DEFINE_LINUX_SYSCALL0(getpid) {
     const long ret = task_get_id(); // Zero is suspicious here...
-    LOG_SYSCALL("", ret);
+    LOG_SYSCALL(ret, "");
     return ret;
 }
 
 DEFINE_LINUX_SYSCALL0(getppid) {
     const long ret = task_get_id() - 1; // Zero is suspicious here...
-    LOG_SYSCALL("", ret);
+    LOG_SYSCALL(ret, "");
     return ret;
 }
 
 DEFINE_LINUX_SYSCALL0(getgid) {
 	const long ret = 0;
-	LOG_SYSCALL("", ret);
+	LOG_SYSCALL(ret, "");
 	return ret;
 }
 
@@ -176,7 +176,7 @@ DEFINE_LINUX_SYSCALL1(uname, struct utsname*, req) {
 	const long ret = 0;
 	assert(req != NULL);
 	*req = my_utsname;
-	LOG_SYSCALL("%p", req, (long) ret);
+	LOG_SYSCALL(ret, "%p", req);
 	return ret;
 }
 
@@ -213,7 +213,7 @@ DEFINE_LINUX_SYSCALL1(close, int, fd) {
     }
 
 finish:
-    LOG_SYSCALL("%d", fd, ret);
+    LOG_SYSCALL(ret, "%d", fd);
     return ret;
 }
 
@@ -247,20 +247,20 @@ DEFINE_LINUX_SYSCALL2(arch_prctl, long, operation, unsigned long, addr) {
         ret = 0;
     }
 
-    LOG_SYSCALL("%s, 0x%lX", op, addr, ret);
+    LOG_SYSCALL(ret, "%s, 0x%lX", op, addr);
     return ret;
 }
 
 DEFINE_LINUX_SYSCALL2(munmap, void*, addr, size_t, length) {
     const long ret = 0;
 
-    // LOG_SYSCALL("%p, 0x%lX", addr, length, ret);
+    // LOG_SYSCALL(ret, "%p, 0x%lX", addr, length);
     return ret;
 }
 
 DEFINE_LINUX_SYSCALL2(dup2, int, fd1, int, fd2) {
     const long ret = openedfile_dup2(fd1, fd2);
-    LOG_SYSCALL("%d, %d", fd1, fd2, ret);
+    LOG_SYSCALL(ret, "%d, %d", fd1, fd2);
     return ret;
 }
 
@@ -269,13 +269,13 @@ DEFINE_LINUX_SYSCALL2(getcwd, char*, buff, size_t, length) {
     if (ret != EOK) {
         ret = -ret;
     }
-    LOG_SYSCALL("%p, %ld", buff, length, ret);
+    LOG_SYSCALL(ret, "%p, %ld", buff, length);
     return ret;
 }
 
 DEFINE_LINUX_SYSCALL2(gettimeofday, void*, tv, void*, tz) {
 	long ret = 0;
-	LOG_SYSCALL("%p, %p", tv, tz, ret);
+	LOG_SYSCALL(ret, "%p, %p", tv, tz);
 	return ret;
 }
 
@@ -290,6 +290,7 @@ DEFINE_LINUX_SYSCALL2(gettimeofday, void*, tv, void*, tz) {
  * @return See man 2 readlink
  */
 DEFINE_LINUX_SYSCALL3(readlink, char*, path, char*, buf, size_t, bufsz) {
+    LOG_SYSCALL(-EINVAL, "%s, %p, %ld", path, buf, bufsz);
     return -EINVAL;
 	if (path == NULL || buf == NULL) {
 		return (long) -1;
@@ -297,13 +298,13 @@ DEFINE_LINUX_SYSCALL3(readlink, char*, path, char*, buf, size_t, bufsz) {
 	const size_t path_len = str_length(path);
 	const size_t to_copy = (path_len > bufsz) ? bufsz : path_len;
 	str_cpy(buf, to_copy, path);
-	LOG_SYSCALL("%s, %p, %ld", path, buf, bufsz, to_copy);
+	// LOG_SYSCALL("%s, %p, %ld", path, buf, bufsz, to_copy);
 	return to_copy;
 }
 
 DEFINE_LINUX_SYSCALL3(mprotect, void*, addr, size_t, length, int, prot) {
 	const long ret = 0;
-	LOG_SYSCALL("%p, 0x%lX, 0x%X", addr, length, prot, ret);
+	LOG_SYSCALL(ret, "%p, 0x%lX, 0x%X", addr, length, prot);
 	return ret;
 }
 
@@ -340,13 +341,13 @@ DEFINE_LINUX_SYSCALL3(lseek, int, fd, off_t, off, int, whence) {
 	}
 
 finish:
-	LOG_SYSCALL("%d, %ld, %d", fd, off, whence, ret);
+	LOG_SYSCALL(ret, "%d, %ld, %d", fd, off, whence);
 	return ret;
 }
 
 DEFINE_LINUX_SYSCALL3(rt_sigaction, int, signum, void*, oldaction, void*, newaction) {
 	long ret = 0;
-	// LOG_SYSCALL("%d, %p, %p", signum, oldaction, newaction, ret);
+	// LOG_SYSCALL(ret, "%d, %p, %p", signum, oldaction, newaction);
 	return ret;
 }
 
@@ -366,13 +367,13 @@ DEFINE_LINUX_SYSCALL4(sendfile, int, out_fd, int, in_fd, off_t, offset, size_t, 
 
 DEFINE_LINUX_SYSCALL4(fadvise64, int, fd, off_t, offset, off_t, len, int, advice) {
 	long ret = 0;
-	LOG_SYSCALL("%d, %ld, %ld, %d", fd, offset, len, advice, ret);
+	LOG_SYSCALL(ret, "%d, %ld, %ld, %d", fd, offset, len, advice);
     return ret;
 }
 
 DEFINE_LINUX_SYSCALL3(ioctl, int, fd, unsigned long, request, void*, data) {
     const long ret = -ENOTTY;
-    LOG_SYSCALL("%d, %lX", fd, request, ret);
+    LOG_SYSCALL(ret, "%d, %lX", fd, request);
     return ret;
 }
 
@@ -394,8 +395,8 @@ DEFINE_LINUX_SYSCALL6(mmap, void*, addr, size_t, length, int, prot, int, flags, 
     assert((flags & 0x22) == 0x22);  // MAP_ANON | MAP_COPY
 
 finish:
-    // LOG_SYSCALL("%p, 0x%lX, 0x%X, 0x%X, 0x%X, 0x%lX", addr, length, prot,
-    // flags, fd, offset, (long) ret);
+    // LOG_SYSCALL(ret, "%p, 0x%lX, 0x%X, 0x%X, 0x%X, 0x%lX", addr, length, prot,
+    // flags, fd, offset);
     return (long) ret;
 }
 
@@ -422,7 +423,7 @@ DEFINE_LINUX_SYSCALL3(execve, const char*, filename, char **const, argv, char **
 	const errno_t err = task_spawnvf(&ret, NULL, new_argv[0], new_argv, -1, -1, -1);
 	assert(err == 0);
 
-	LOG_SYSCALL("%s", filename, ret);
+	LOG_SYSCALL(ret, "%s", filename);
 	return ret;
 }
 
@@ -436,25 +437,25 @@ DEFINE_LINUX_SYSCALL1(wait4, long, pid) {
 	rc = task_wait(&wait, &ex, &rr);
 	assert(rc == EOK);
 	assert(ex == TASK_EXIT_NORMAL);
-    LOG_SYSCALL("%ld", pid, ret);
+    LOG_SYSCALL(ret, "%ld", pid);
 	return ret;
 }
 
 DEFINE_LINUX_SYSCALL1(sysinfo, void*, info) {
 	long ret = 0;
-	LOG_SYSCALL("%p", info, ret);
+	LOG_SYSCALL(ret, "%p", info);
 	return ret;
 }
 
 DEFINE_LINUX_SYSCALL4(prlimit64, long, pid, int, resource, void*, old_limit, void*, new_limit) {
 	long ret = 0;
-	LOG_SYSCALL("%ld, %d, %p, %p", pid, resource, old_limit, new_limit, ret);
+	LOG_SYSCALL(ret, "%ld, %d, %p, %p", pid, resource, old_limit, new_limit);
 	return ret;
 }
 
 DEFINE_LINUX_SYSCALL1(set_tid_address, int*, address) {
 	long ret = thread_get_id();
-	LOG_SYSCALL("%p", address, ret);
+	LOG_SYSCALL(ret, "%p", address);
 	return ret;
 }
 
@@ -465,7 +466,7 @@ typedef struct {
 
 DEFINE_LINUX_SYSCALL3(rt_sigprocmask, int, how, const sigset_t*, set, sigset_t*, oldset) {
     long ret = -1;
-	// LOG_SYSCALL("%d, %p", how, set, ret);
+	// LOG_SYSCALL(ret, "%d, %p", how, set);
     return ret;
 }
 
@@ -474,6 +475,6 @@ DEFINE_LINUX_SYSCALL1(unlink, const char*, path) {
     if (ret != EOK) {
 		ret = -ret;
     }
-	LOG_SYSCALL("%s", path, ret);
+	LOG_SYSCALL(ret, "%s", path);
     return ret;
 }

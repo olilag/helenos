@@ -39,11 +39,14 @@
 #include <assert.h>
 #include <elf/elf_mod.h>
 #include <errno.h>
+#include <getopt.h>
 #include <malloc.h>
 #include <masq.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <str.h>
+#include <str_error.h>
 
 #include "linux/auxvec.h"
 #include "syscalls.h"
@@ -124,7 +127,22 @@ const syscall_handler handlers[334] = {
 
 long random = (long) 0xdeadbeefcafefeed;
 
+int verbose = 0;
+
 /* ------------------------- PUBLIC FUNCTION DEFINITIONS -------------------- */
+
+void print_log(const char* fmt, ...) {
+    if (verbose != 1) {
+        return;
+    }
+
+    va_list args;
+    va_start(args, fmt);
+
+    vprintf(fmt, args);
+
+    va_end(args);
+}
 
 int main(int argc, char *argv[])
 {
@@ -133,7 +151,25 @@ int main(int argc, char *argv[])
 		printf("Running tests\n");
 		run_tests();
 	} else {
-		run_prog(argc - 1, &argv[1]);
+	    int c;
+
+		while ((c = getopt(argc, argv, "+v")) != -1) {
+		    switch (c) {
+			case 'v':
+			    verbose = 1;
+			    break;
+			default:
+			    printf("Usage: %s [-v] executable [args...]\n", argv[0]);
+				return 1;
+			}
+		}
+
+		if (optind >= argc) {
+            printf("Missing executable\n");
+            return 1;
+        }
+
+		run_prog(argc - optind, &argv[optind]);
 	}
 
 	return 0;
@@ -190,7 +226,7 @@ static int run_prog(int argc, char **argv)
                 printf("Failed loading the executable to the memory\n");
                 return err;
         case EOK:
-                DPRINTF("Loaded %s at %p\n", filename, finfo.base);
+                print_log("Loaded %s at %p\n", filename, finfo.base);
                 break;
         default:
                 printf("Error code %d while loading %s\n", err, filename);
@@ -212,7 +248,7 @@ static int run_prog(int argc, char **argv)
 		masq(&context);
 		const long id = context.rax;
 		if (id == __NR_exit || id == __NR_exit_group) {
-			DPRINTF("exit(%ld)\n", context.rdi);
+			print_log("exit(%ld)\n", context.rdi);
 			return context.rdi;
 		} else if (id == __NR_vfork) {
 			backup_context = context;

@@ -2,6 +2,8 @@
 #define LILO_SYSCALLS_H
 
 #include <abi/arch/masq.h>
+#include <str_error.h>
+
 
 #define __unused __attribute__((unused))
 
@@ -78,9 +80,19 @@ long translate_error_code(long ret);
 #define DPRINTF(msg, ...) ((void) 0)
 #endif
 
+void print_log(const char* fmt, ...);
 
-#define LOG_SYSCALL(msg, ...) \
-	DPRINTF("%s(" msg ") = %ld\n", __FUNCTION__, __VA_ARGS__)
+static inline const char* __str_error_name(errno_t e) {
+    return str_error_name(e);
+}
+
+#define LOG_SYSCALL(ret, msg, ...) \
+    if (((long)(ret)) < 0) { \
+        print_log("%s(" msg ") = %s\n", __FUNCTION__, ##__VA_ARGS__, __str_error_name(-((long)(ret)))); \
+    } else { \
+        print_log("%s(" msg ") = %ld\n", __FUNCTION__, ##__VA_ARGS__, ret); \
+    }
+
 
 // syscall 0
 DECLARE_LINUX_SYSCALL(geteuid);

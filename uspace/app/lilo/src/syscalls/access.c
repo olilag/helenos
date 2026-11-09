@@ -52,7 +52,7 @@ DEFINE_LINUX_SYSCALL2(access, const char *, filename, int, mode) {
         vfs_put(handle);
 	}
 
-	LOG_SYSCALL("%s, %d", filename, mode, ret);
+	LOG_SYSCALL(ret, "%s, %d", filename, mode);
 	return ret;
 }
 

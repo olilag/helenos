@@ -56,7 +56,7 @@ DEFINE_LINUX_SYSCALL1(times, struct tms *, tms) {
 	tms->tms_cutime = counter / 4;
 	tms->tms_cstime = counter / 4;
 
-	LOG_SYSCALL("%p", tms, (long)counter);
+	LOG_SYSCALL((long)counter, "%p", tms);
 
 	return counter;
 }
