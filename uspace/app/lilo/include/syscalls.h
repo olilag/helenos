@@ -80,7 +80,7 @@ long translate_error_code(long ret);
 #define DPRINTF(msg, ...) ((void) 0)
 #endif
 
-void print_log(const char* fmt, ...);
+void print_log(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 
 static inline const char* __str_error_name(errno_t e) {
     return str_error_name(e);

@@ -290,8 +290,9 @@ DEFINE_LINUX_SYSCALL2(gettimeofday, void*, tv, void*, tz) {
  * @return See man 2 readlink
  */
 DEFINE_LINUX_SYSCALL3(readlink, char*, path, char*, buf, size_t, bufsz) {
-    LOG_SYSCALL(-EINVAL, "%s, %p, %ld", path, buf, bufsz);
-    return -EINVAL;
+    long ret = -EINVAL;
+    LOG_SYSCALL(ret, "%s, %p, %ld", path, buf, bufsz);
+    return ret;
 	if (path == NULL || buf == NULL) {
 		return (long) -1;
 	}
