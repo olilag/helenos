@@ -86,12 +86,19 @@ static inline const char* __str_error_name(errno_t e) {
     return str_error_name(e);
 }
 
-#define LOG_SYSCALL(ret, msg, ...) \
-    if (((long)(ret)) < 0) { \
-        print_log("%s(" msg ") = %s\n", __FUNCTION__, ##__VA_ARGS__, __str_error_name(-((long)(ret)))); \
-    } else { \
+#define LOG_SYSCALL_SUCCESS(ret, msg, ...) \
+    if ((long)(ret) >= 0) { \
         print_log("%s(" msg ") = %ld\n", __FUNCTION__, ##__VA_ARGS__, ret); \
     }
+
+#define LOG_SYSCALL_ERROR(ret, msg, ...) \
+    if ((long)(ret) < 0) { \
+        print_log("%s(" msg ") = %ld %s\n", __FUNCTION__, ##__VA_ARGS__, ret, __str_error_name(-((long)(ret)))); \
+    }
+
+#define LOG_SYSCALL(ret, msg, ...) \
+    LOG_SYSCALL_SUCCESS(ret, msg, ##__VA_ARGS__) \
+    LOG_SYSCALL_ERROR(ret, msg, ##__VA_ARGS__)
 
 
 // syscall 0

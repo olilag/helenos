@@ -254,7 +254,7 @@ DEFINE_LINUX_SYSCALL2(arch_prctl, long, operation, unsigned long, addr) {
 DEFINE_LINUX_SYSCALL2(munmap, void*, addr, size_t, length) {
     const long ret = 0;
 
-    // LOG_SYSCALL(ret, "%p, 0x%lX", addr, length);
+    LOG_SYSCALL(ret, "%p, 0x%lX", addr, length);
     return ret;
 }
 
@@ -348,7 +348,7 @@ finish:
 
 DEFINE_LINUX_SYSCALL3(rt_sigaction, int, signum, void*, oldaction, void*, newaction) {
 	long ret = 0;
-	// LOG_SYSCALL(ret, "%d, %p, %p", signum, oldaction, newaction);
+	LOG_SYSCALL(ret, "%d, %p, %p", signum, oldaction, newaction);
 	return ret;
 }
 
@@ -363,7 +363,9 @@ DEFINE_LINUX_SYSCALL3(rt_sigaction, int, signum, void*, oldaction, void*, newact
  * @return
  */
 DEFINE_LINUX_SYSCALL4(sendfile, int, out_fd, int, in_fd, off_t, offset, size_t, count) {
-    return -EINVAL;
+    long ret = -EINVAL;
+    LOG_SYSCALL(ret, "%d, %d, %ld, %lu", out_fd, in_fd, offset, count);
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL4(fadvise64, int, fd, off_t, offset, off_t, len, int, advice) {
@@ -396,9 +398,8 @@ DEFINE_LINUX_SYSCALL6(mmap, void*, addr, size_t, length, int, prot, int, flags, 
     assert((flags & 0x22) == 0x22);  // MAP_ANON | MAP_COPY
 
 finish:
-    // LOG_SYSCALL(ret, "%p, 0x%lX, 0x%X, 0x%X, 0x%X, 0x%lX", addr, length, prot,
-    // flags, fd, offset);
-    return (long) ret;
+    LOG_SYSCALL(ret, "%p, 0x%lX, 0x%X, 0x%X, 0x%X, 0x%lX", addr, length, prot, flags, fd, offset);
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL3(execve, const char*, filename, char **const, argv, char **const, envp) {
@@ -467,7 +468,7 @@ typedef struct {
 
 DEFINE_LINUX_SYSCALL3(rt_sigprocmask, int, how, const sigset_t*, set, sigset_t*, oldset) {
     long ret = -1;
-	// LOG_SYSCALL(ret, "%d, %p", how, set);
+	LOG_SYSCALL(ret, "%d, %p", how, set);
     return ret;
 }
 
