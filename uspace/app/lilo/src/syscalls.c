@@ -42,6 +42,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <str.h>
+#include <time.h>
 #include <vfs/vfs.h>
 #include <task.h>
 
@@ -273,8 +274,19 @@ DEFINE_LINUX_SYSCALL2(getcwd, char*, buff, size_t, length) {
     return ret;
 }
 
-DEFINE_LINUX_SYSCALL2(gettimeofday, void*, tv, void*, tz) {
+struct timeval {
+    time_t tv_sec;
+    long tv_usec;
+};
+
+DEFINE_LINUX_SYSCALL2(gettimeofday, struct timeval*, tv, void*, tz) {
 	long ret = 0;
+
+	struct timespec ts;
+	getrealtime(&ts);
+	tv->tv_sec = ts.tv_sec;
+	tv->tv_usec = NSEC2USEC(ts.tv_nsec);
+
 	LOG_SYSCALL(ret, "%p, %p", tv, tz);
 	return ret;
 }
