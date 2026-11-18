@@ -99,6 +99,7 @@ const syscall_handler handlers[334] = {
     SYSCALL_ENTRY(getgid),
     SYSCALL_ENTRY(getpid),
     SYSCALL_ENTRY(getppid),
+    SYSCALL_ENTRY(getrandom),
     SYSCALL_ENTRY(getuid),
     SYSCALL_ENTRY(gettimeofday),
     SYSCALL_ENTRY(ioctl),
