@@ -53,29 +53,29 @@
 #include "x86_64-linux-generic/asm/unistd_64.h"
 
 /* ------------------------- MACROS ----------------------------------------- */
-#define STACK_SIZE (4096 * 4)
 
-#define __unused __attribute__((unused))
+#define STACK_SIZE (4096 * 4)
 #define SYSCALL_ENTRY(name) [__NR_##name] = sys_##name
 
 /* ------------------------- TYPE DECLARATIONS ------------------------------ */
 
-typedef long (*syscall_handler)(
-    long a1, long a2, long a3, long a4, long a5, long a6, masq_t *masq);
+typedef long (*syscall_handler)(long a1, long a2, long a3, long a4, long a5, long a6, masq_t *masq);
 
 typedef struct {
-	long int a_type; /* Entry type */
-	union {
-		long int a_val;      /* Integer value */
-		void *a_ptr;         /* Pointer value */
-		void (*a_fcn)(void); /* Function pointer value */
-	} a_un;
+    long int a_type; /* Entry type */
+    union {
+        long int a_val;      /* Integer value */
+        void *a_ptr;         /* Pointer value */
+        void (*a_fcn)(void); /* Function pointer value */
+    } a_un;
 } auxv_t;
 
 /* ------------------------- EXTERNAL FUNCTION DECLARATIONS ----------------- */
+
 extern void run_tests(void);
 
 /* ------------------------- LOCAL FUNCTION DECLARATIONS -------------------- */
+
 static int run_prog(int argc, char **argv);
 static void *auxv_create(void *auxv, int argc, char **argv_p);
 
@@ -114,7 +114,7 @@ const syscall_handler handlers[334] = {
     SYSCALL_ENTRY(readv),
     SYSCALL_ENTRY(rt_sigaction),
     SYSCALL_ENTRY(rt_sigprocmask),
-	SYSCALL_ENTRY(set_tid_address),
+    SYSCALL_ENTRY(set_tid_address),
     SYSCALL_ENTRY(stat),
     SYSCALL_ENTRY(sysinfo),
     SYSCALL_ENTRY(times),
@@ -144,64 +144,60 @@ void print_log(const char* fmt, ...) {
     va_end(args);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
+    if (argc == 1) {
+        printf("Running tests\n");
+        run_tests();
+    } else {
+        int c;
 
-	if (argc == 1) {
-		printf("Running tests\n");
-		run_tests();
-	} else {
-	    int c;
+        while ((c = getopt(argc, argv, "+v")) != -1) {
+            switch (c) {
+            case 'v':
+                verbose = 1;
+                break;
+            default:
+                printf("Usage: %s [-v] executable [args...]\n", argv[0]);
+                return 1;
+            }
+        }
 
-		while ((c = getopt(argc, argv, "+v")) != -1) {
-		    switch (c) {
-			case 'v':
-			    verbose = 1;
-			    break;
-			default:
-			    printf("Usage: %s [-v] executable [args...]\n", argv[0]);
-				return 1;
-			}
-		}
-
-		if (optind >= argc) {
+        if (optind >= argc) {
             printf("Missing executable\n");
             return 1;
         }
 
-		run_prog(argc - optind, &argv[optind]);
-	}
+        run_prog(argc - optind, &argv[optind]);
+    }
 
-	return 0;
+    return 0;
 }
 
-static void *auxv_create(void *auxv_p, int argc, char *argv_p[])
-{
+static void *auxv_create(void *auxv_p, int argc, char *argv_p[]) {
+    auxv_t *auxv = auxv_p;
 
-	auxv_t *auxv = auxv_p;
+    auxv[-1].a_type = 0;
+    auxv[-2] = (auxv_t){.a_type = AT_RANDOM, .a_un.a_ptr = &random};
+    auxv[-4] = (auxv_t){.a_type = AT_UID, .a_un.a_val = 0};
+    auxv[-5] = (auxv_t){.a_type = AT_GID, .a_un.a_val = 0};
+    auxv[-3] = (auxv_t){.a_type = AT_EUID, .a_un.a_val = 0};
+    auxv[-6] = (auxv_t){.a_type = AT_EGID, .a_un.a_val = 0};
 
-	auxv[-1].a_type = 0;
-	auxv[-2] = (auxv_t){.a_type = AT_RANDOM, .a_un.a_ptr = &random};
-	auxv[-4] = (auxv_t){.a_type = AT_UID, .a_un.a_val = 0};
-	auxv[-5] = (auxv_t){.a_type = AT_GID, .a_un.a_val = 0};
-	auxv[-3] = (auxv_t){.a_type = AT_EUID, .a_un.a_val = 0};
-	auxv[-6] = (auxv_t){.a_type = AT_EGID, .a_un.a_val = 0};
+    const char **envp = (const char **) &auxv[-6];
+    envp[-1] = NULL;
 
-	const char **envp = (const char **) &auxv[-6];
-	envp[-1] = NULL;
+    const char **argv = &envp[-1];
+    int i = -1;
+    argv[i--] = NULL;
+    for (; argc + i + 1 >= 0; --i) {
+        const int index = argc + 1 + i;
+        assert(index >= 0);
+        assert(index < argc);
+        argv[i] = argv_p[index];
+    }
+    argv[i] = (const char *) (uint64_t) argc;
 
-	const char **argv = &envp[-1];
-	int i = -1;
-	argv[i--] = NULL;
-	for (; argc + i + 1 >= 0; --i) {
-		const int index = argc + 1 + i;
-		assert(index >= 0);
-		assert(index < argc);
-		argv[i] = argv_p[index];
-	}
-	argv[i] = (const char *) (uint64_t) argc;
-
-	return &argv[i];
+    return &argv[i];
 }
 
 /**
@@ -212,68 +208,65 @@ static void *auxv_create(void *auxv_p, int argc, char *argv_p[])
  *
  * @returns The guest's program exit value
  */
-static int run_prog(int argc, char **argv)
-{
-	elf_finfo_t finfo;
-	eld_flags_t flags = 0;
-	const char *filename = argv[0];
-	errno_t err = elf_load_file_name(filename, flags, &finfo);
-        switch(err){
-	case EIO:
-                printf("Executable file not found: %s\n", filename);
-		return err;
-        case ENOMEM:
-                printf("Failed loading the executable to the memory\n");
-                return err;
-        case EOK:
-                print_log("Loaded %s at %p\n", filename, finfo.base);
-                break;
-        default:
-                printf("Error code %d while loading %s\n", err, filename);
-		return err;
+static int run_prog(int argc, char **argv) {
+    elf_finfo_t finfo;
+    eld_flags_t flags = 0;
+    const char *filename = argv[0];
+    errno_t err = elf_load_file_name(filename, flags, &finfo);
+    switch(err){
+    case EIO:
+        printf("Executable file not found: %s\n", filename);
+        return err;
+    case ENOMEM:
+        printf("Failed loading the executable to the memory\n");
+        return err;
+    case EOK:
+        print_log("Loaded %s at %p\n", filename, finfo.base);
+        break;
+    default:
+        printf("Error code %d while loading %s\n", err, filename);
+        return err;
+    }
+
+    masq_t context = {
+        .fsbase = (uint64_t) memalign(PAGE_SIZE, PAGE_SIZE),
+        .rcx = (uint64_t) finfo.entry,
+        // Create the AUXV (https://www.elttam.com/blog/playing-with-canaries/)
+        // http://articles.manugarg.com/aboutelfauxiliaryvectors
+        // https://refspecs.linuxfoundation.org/LSB_1.3.0/IA64/spec/auxiliaryvector.html
+        .rsp = (uint64_t) auxv_create(&emu_stack[STACK_SIZE], argc, argv)
+    };
+
+    bool forked = false;
+    masq_t backup_context;
+    while (true) {
+        masq(&context);
+        const long id = context.rax;
+        if (id == __NR_exit || id == __NR_exit_group) {
+            print_log("exit(%ld)\n", context.rdi);
+            return context.rdi;
+        } else if (id == __NR_vfork) {
+            backup_context = context;
+            forked = true;
+            // For now return 0. The child should run first
+            context.rax = 0;
+        } else if (handlers[id] == NULL) {
+            printf("Unhandled syscall: %ld\n", id);
+            break;
+        } else {
+            assert(!forked || id == __NR_execve);
+            context.rax = handlers[id](context.rdi, context.rsi, context.rdx, context.r10, context.r8, context.r9, &context);
+
+            if(forked) {
+                forked = false;
+                // Previous syscall was execve, the rax holds child pid
+                backup_context.rax = context.rax;
+                context = backup_context;
+            }
         }
+    }
 
-	masq_t context = {.fsbase = (uint64_t) memalign(PAGE_SIZE, PAGE_SIZE),
-	    .rcx = (uint64_t) finfo.entry,
-	    .rsp = (uint64_t) auxv_create(&emu_stack[STACK_SIZE], argc, argv)};
-
-	// Create the AUXV (https://www.elttam.com/blog/playing-with-canaries/)
-	// http://articles.manugarg.com/aboutelfauxiliaryvectors
-	// https://refspecs.linuxfoundation.org/LSB_1.3.0/IA64/spec/auxiliaryvector.html
-	// context->rsp = auxv_create(&context);
-
-        bool forked = false;
-        masq_t backup_context;
-        while (true) {
-		masq(&context);
-		const long id = context.rax;
-		if (id == __NR_exit || id == __NR_exit_group) {
-			print_log("exit(%ld)\n", context.rdi);
-			return context.rdi;
-		} else if (id == __NR_vfork) {
-			backup_context = context;
-			forked = true;
-			// For now return 0. The child should run first
-			context.rax = 0;
-		} else if (handlers[id] == NULL) {
-			printf("Unhandled syscall: %ld\n", id);
-			break;
-		} else {
-			assert(!forked || id == __NR_execve);
-			context.rax =
-			    handlers[id](context.rdi, context.rsi, context.rdx,
-			        context.r10, context.r8, context.r9, &context);
-
-			if(forked) {
-				forked = false;
-				// Previous syscall was execve, the rax holds child pid
-				backup_context.rax = context.rax;
-				context = backup_context;
-			}
-		}
-	}
-
-	return INT32_MAX;
+    return INT32_MAX;
 }
 
 /** @}
