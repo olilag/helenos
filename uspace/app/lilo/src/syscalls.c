@@ -269,8 +269,11 @@ DEFINE_LINUX_SYSCALL2(getcwd, char*, buff, size_t, length) {
     long ret = vfs_cwd_get(buff, length);
     if (ret != EOK) {
         ret = -ret;
+    } else {
+        ret = str_size(buff) + 1;
     }
-    LOG_SYSCALL(ret, "%p, %ld", buff, length);
+    LOG_SYSCALL_SUCCESS(ret, "\"%s\", %ld", buff, length);
+    LOG_SYSCALL_ERROR(ret, "%p, %ld", buff, length);
     return ret;
 }
 
