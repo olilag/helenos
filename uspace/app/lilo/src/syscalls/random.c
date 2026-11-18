@@ -24,7 +24,7 @@ DEFINE_LINUX_SYSCALL3(getrandom, void*, buf, size_t, size, unsigned int, flags) 
         rndgen_uint8(rng, ptr + i);
     }
 
-    ret = EOK;
+    ret = size;
     LOG_SYSCALL(ret, "%p, %lu, %u", buf, size, flags);
     return ret;
 }
