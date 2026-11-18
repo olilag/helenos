@@ -87,6 +87,7 @@ const syscall_handler handlers[334] = {
     SYSCALL_ENTRY(access),
     SYSCALL_ENTRY(arch_prctl),
     SYSCALL_ENTRY(brk),
+    SYSCALL_ENTRY(clock_gettime),
     SYSCALL_ENTRY(close),
     SYSCALL_ENTRY(dup2),
     SYSCALL_ENTRY(execve),
