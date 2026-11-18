@@ -253,8 +253,7 @@ DEFINE_LINUX_SYSCALL2(arch_prctl, long, operation, unsigned long, addr) {
 }
 
 DEFINE_LINUX_SYSCALL2(munmap, void*, addr, size_t, length) {
-    const long ret = 0;
-
+    const long ret = as_area_destroy(addr);
     LOG_SYSCALL(ret, "%p, 0x%lX", addr, length);
     return ret;
 }
@@ -402,7 +401,7 @@ DEFINE_LINUX_SYSCALL6(mmap, void*, addr, size_t, length, int, prot, int, flags, 
 		goto finish;
 	}
 
-    ret = (long)as_area_create(AS_AREA_ANY, length,
+    ret = (long)as_area_create(addr == NULL ? AS_AREA_ANY : addr, length,
                                 AS_AREA_READ | AS_AREA_WRITE | AS_AREA_CACHEABLE, AS_AREA_UNPAGED);
 
     if (ret == (long)AS_MAP_FAILED) {
