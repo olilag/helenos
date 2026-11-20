@@ -1,0 +1,65 @@
+// syscall 0
+__syscall_entry(getegid)
+__syscall_entry(geteuid)
+__syscall_entry(getgid)
+__syscall_entry(getpid)
+__syscall_entry(getppid)
+__syscall_entry(getuid)
+
+// syscall 1
+__syscall_entry(brk)
+__syscall_entry(chdir)
+__syscall_entry(close)
+__syscall_entry(rmdir)
+__syscall_entry(set_tid_address)
+__syscall_entry(sysinfo)
+__syscall_entry(times)
+__syscall_entry(uname)
+__syscall_entry(unlink)
+
+// syscall 2
+__syscall_entry(arch_prctl)
+__syscall_entry(chmod)
+__syscall_entry(clock_gettime)
+__syscall_entry(dup2)
+__syscall_entry(fstat)
+__syscall_entry(getcwd)
+__syscall_entry(gettimeofday)
+__syscall_entry(kill)
+__syscall_entry(lstat)
+__syscall_entry(mkdir)
+__syscall_entry(access)
+__syscall_entry(munmap)
+__syscall_entry(pipe2)
+__syscall_entry(stat)
+
+// syscall 3
+__syscall_entry(execve)
+__syscall_entry(fcntl)
+__syscall_entry(getdents64)
+__syscall_entry(getrandom)
+__syscall_entry(ioctl)
+__syscall_entry(lseek)
+__syscall_entry(mprotect)
+__syscall_entry(open)
+__syscall_entry(prlimit64)
+__syscall_entry(read)
+__syscall_entry(readlink)
+__syscall_entry(readv)
+__syscall_entry(sched_getaffinity)
+__syscall_entry(socket)
+__syscall_entry(write)
+__syscall_entry(writev)
+
+// syscall 4
+__syscall_entry(fadvise64)
+__syscall_entry(openat)
+__syscall_entry(rt_sigaction)
+__syscall_entry(rt_sigprocmask)
+__syscall_entry(sendfile)
+__syscall_entry(wait4)
+
+// syscall 5
+
+// syscall 6
+__syscall_entry(mmap)
