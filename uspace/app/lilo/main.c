@@ -187,28 +187,25 @@ int main(int argc, char *argv[]) {
 static void *auxv_create(void *auxv_p, int argc, char *argv_p[]) {
     auxv_t *auxv = auxv_p;
 
-    auxv[-1].a_type = 0;
+    auxv[-1].a_type = AT_NULL;
     auxv[-2] = (auxv_t){.a_type = AT_RANDOM, .a_un.a_ptr = &random};
-    auxv[-4] = (auxv_t){.a_type = AT_UID, .a_un.a_val = 0};
-    auxv[-5] = (auxv_t){.a_type = AT_GID, .a_un.a_val = 0};
-    auxv[-3] = (auxv_t){.a_type = AT_EUID, .a_un.a_val = 0};
-    auxv[-6] = (auxv_t){.a_type = AT_EGID, .a_un.a_val = 0};
+    auxv[-3] = (auxv_t){.a_type = AT_EGID, .a_un.a_val = 0};
+    auxv[-4] = (auxv_t){.a_type = AT_GID, .a_un.a_val = 0};
+    auxv[-5] = (auxv_t){.a_type = AT_EUID, .a_un.a_val = 0};
+    auxv[-6] = (auxv_t){.a_type = AT_UID, .a_un.a_val = 0};
 
-    const char **envp = (const char **) &auxv[-6];
+    const char **envp = (const char **)&auxv[-6];
     envp[-1] = NULL;
 
     const char **argv = &envp[-1];
-    int i = -1;
-    argv[i--] = NULL;
-    for (; argc + i + 1 >= 0; --i) {
-        const int index = argc + 1 + i;
-        assert(index >= 0);
-        assert(index < argc);
-        argv[i] = argv_p[index];
-    }
-    argv[i] = (const char *) (uint64_t) argc;
+    argv[-1] = NULL;
 
-    return &argv[i];
+    for (int i = 0; i < argc; ++i) {
+        argv[-2 - i] = argv_p[argc - 1 - i];
+    }
+    argv[-argc - 2] = (char *)(uintptr_t)argc;
+
+    return &argv[-argc - 2];
 }
 
 /**
