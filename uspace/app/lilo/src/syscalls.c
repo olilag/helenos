@@ -35,12 +35,15 @@
 
 /* ------------------------- FILE INCLUSION --------------------------------- */
 
+#include <abi/sysinfo.h>
 #include <assert.h>
 #include <errno.h>
 #include <fibril.h>
+#include <stats.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <str.h>
 #include <time.h>
 #include <timeint.h>
@@ -52,8 +55,6 @@
 
 #include "linux/fs.h"
 #include "x86_64-linux-generic/asm/prctl.h"
-
-#include "lib/c/generic/private/thread.h"
 
 /* ------------------------- MACROS ----------------------------------------- */
 
@@ -306,7 +307,7 @@ DEFINE_LINUX_SYSCALL3(mprotect, void*, addr, size_t, length, int, prot) {
 DEFINE_LINUX_SYSCALL3(lseek, int, fd, off_t, off, int, whence) {
     long ret;
     openedfile_t *file = openedfile_get_by_fd(fd);
-    if(file == NULL){
+    if(file == NULL) {
         ret = -EBADF;
         goto finish;
     }
@@ -426,7 +427,7 @@ DEFINE_LINUX_SYSCALL4(prlimit64, long, pid, int, resource, void*, old_limit, voi
 }
 
 DEFINE_LINUX_SYSCALL1(set_tid_address, int*, address) {
-    long ret = thread_get_id();
+    long ret = task_get_id();
     LOG_SYSCALL(ret, "%p", address);
     return ret;
 }
@@ -473,8 +474,53 @@ DEFINE_LINUX_SYSCALL2(pipe2, int*, fd, int, flags) {
     return ret;
 }
 
-DEFINE_LINUX_SYSCALL3(sched_getaffinity, long, pid, size_t, cpusetsize, void*, mask) {
-    long ret = -EFAULT;
+typedef struct {
+    unsigned long __bits[128/sizeof(long)];
+} cpu_set_t;
+
+#define __CPU_op_S(i, size, set, op) ( (i)/8U >= (size) ? 0 : \
+	(((unsigned long *)(set))[(i)/8/sizeof(long)] op (1UL<<((i)%(8*sizeof(long))))) )
+#define CPU_SET_S(i, size, set) __CPU_op_S(i, size, set, |=)
+#define CPU_ZERO_S(size,set) (memset)(set,0,size)
+
+DEFINE_LINUX_SYSCALL3(sched_getaffinity, long, pid, size_t, cpusetsize, unsigned long*, mask) {
+    long ret;
+    size_t cpu_count;
+    stats_cpu_t* cpu_data = stats_get_cpus(&cpu_count);
+    if (cpu_data == NULL) {
+        ret = -EINVAL;
+        goto finish;
+    }
+
+    size_t highest_cpu = 0;
+    bool any_active = false;
+    for (size_t i = 0; i < cpu_count; i++) {
+        if (cpu_data[i].active) {
+            if (!any_active || cpu_data[i].id > highest_cpu) {
+                highest_cpu = cpu_data[i].id;
+            }
+
+            any_active = true;
+        }
+    }
+
+    size_t required_size = any_active ? (highest_cpu / (8 * sizeof(unsigned long)) + 1) * sizeof(unsigned long) : sizeof(unsigned long);
+    if (cpusetsize < required_size) {
+        ret = -EINVAL;
+        goto finish;
+    }
+
+    CPU_ZERO_S(cpusetsize, mask);
+    for (size_t i = 0; i < cpu_count; i++) {
+        if (cpu_data[i].active) {
+            CPU_SET_S(cpu_data[i].id, cpusetsize, mask);
+        }
+    }
+
+    ret = required_size;
+
+finish:
+    free(cpu_data);
     LOG_SYSCALL(ret, "%ld, %lu, %p", pid, cpusetsize, mask);
     return ret;
 }
