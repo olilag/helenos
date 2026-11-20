@@ -70,10 +70,6 @@ extern void openedfile_release(int);
 
 extern openedfile_ops_t openedfile_ops[];
 
-extern openedfile_ops_t openedfile_ops_regularfile;
-extern openedfile_ops_t openedfile_ops_stdin;
-extern openedfile_ops_t openedfile_ops_stdout;
-
 #endif
 
 /** @}
