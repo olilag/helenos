@@ -512,3 +512,33 @@ DEFINE_LINUX_SYSCALL2(chmod, const char*, path, unsigned short, mode) {
     LOG_SYSCALL(ret, "%s, %u", path, mode);
     return ret;
 }
+
+DEFINE_LINUX_SYSCALL2(fcntl, int, fd, int, op) {
+    long ret = 0;
+    LOG_SYSCALL(ret, "%d, %d", fd, op);
+    return ret;
+}
+
+DEFINE_LINUX_SYSCALL2(pipe2, int*, fd, int, flags) {
+    long ret = -EFAULT;
+    LOG_SYSCALL(ret, "[%d, %d], %d", fd[0], fd[1], flags);
+    return ret;
+}
+
+DEFINE_LINUX_SYSCALL3(sched_getaffinity, long, pid, size_t, cpusetsize, void*, mask) {
+    long ret = -EFAULT;
+    LOG_SYSCALL(ret, "%ld, %lu, %p", pid, cpusetsize, mask);
+    return ret;
+}
+
+DEFINE_LINUX_SYSCALL3(socket, int, domain, int, type, int, protocol) {
+    long ret = -EAFNOSUPPORT;
+    LOG_SYSCALL(ret, "%d, %d, %d", domain, type, protocol);
+    return ret;
+}
+
+DEFINE_LINUX_SYSCALL2(kill, long, pid, int, sig) {
+    long ret = -EPERM;
+    LOG_SYSCALL(ret, "%ld, %d", pid, sig);
+    return ret;
+}
