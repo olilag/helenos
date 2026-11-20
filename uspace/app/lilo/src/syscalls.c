@@ -443,8 +443,14 @@ DEFINE_LINUX_SYSCALL3(execve, const char*, filename, char **const, argv, char **
 	return ret;
 }
 
-DEFINE_LINUX_SYSCALL1(wait4, long, pid) {
-	long ret = pid;
+DEFINE_LINUX_SYSCALL4(wait4, long, pid, int*, wstatus, int, options, void*, rusage) {
+    long ret;
+    if (pid == -1) {
+        ret = -ECHILD;
+        goto finish;
+    } else {
+        ret = pid;
+    }
 	int rr;
 	task_wait_t wait;
 	task_exit_t ex;
@@ -453,7 +459,9 @@ DEFINE_LINUX_SYSCALL1(wait4, long, pid) {
 	rc = task_wait(&wait, &ex, &rr);
 	assert(rc == EOK);
 	assert(ex == TASK_EXIT_NORMAL);
-    LOG_SYSCALL(ret, "%ld", pid);
+
+finish:
+    LOG_SYSCALL(ret, "%ld, %p, %d, %p", pid, wstatus, options, rusage);
 	return ret;
 }
 
