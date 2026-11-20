@@ -37,10 +37,13 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fibril.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <str.h>
 #include <time.h>
+#include <timeint.h>
 #include <vfs/vfs.h>
 #include <task.h>
 
@@ -485,5 +488,118 @@ DEFINE_LINUX_SYSCALL3(socket, int, domain, int, type, int, protocol) {
 DEFINE_LINUX_SYSCALL2(kill, long, pid, int, sig) {
     long ret = -EPERM;
     LOG_SYSCALL(ret, "%ld, %d", pid, sig);
+    return ret;
+}
+
+DEFINE_LINUX_SYSCALL1(umask, int, mask) {
+    long ret = 0777;
+    LOG_SYSCALL(ret, "%d", mask);
+    return ret;
+}
+
+DEFINE_LINUX_SYSCALL2(rename, const char*, oldname, const char*, newname) {
+    long ret = vfs_rename_path(oldname, newname);
+    if (ret != EOK) {
+        ret = -ret;
+    }
+    LOG_SYSCALL(ret, "%s, %s", oldname, newname);
+    return ret;
+}
+
+struct statfs {
+    unsigned long f_type;
+    unsigned long f_bsize;
+    unsigned long f_blocks;
+    unsigned long f_bfree;
+    unsigned long f_bavail;
+    unsigned long f_files;
+    unsigned long f_ffree;
+    struct {
+        int	val[2];
+    } f_fsid;
+    unsigned long f_namelen;
+    unsigned long f_frsize;
+    unsigned long f_flags;
+    unsigned long f_spare[4];
+};
+
+#define EXT4_SUPER_MAGIC 0xef53
+#define TMPFS_MAGIC 0x01021994
+
+DEFINE_LINUX_SYSCALL2(statfs, const char*, path, struct statfs*, buf) {
+    vfs_statfs_t st;
+    long ret = vfs_statfs_path(path, &st);
+    if (ret != EOK) {
+        ret = -ret;
+        goto finish;
+    }
+
+    memset(buf, 0, sizeof(struct statfs));
+    if (str_cmp(st.fs_name, "ext4fs") == 0) {
+        buf->f_type = EXT4_SUPER_MAGIC;
+    } else if (str_cmp(st.fs_name, "tmpfs") == 0) {
+        buf->f_type = TMPFS_MAGIC;
+    }
+    buf->f_bsize = st.f_bsize;
+    buf->f_bfree = st.f_bfree;
+    buf->f_bsize = st.f_bsize;
+
+finish:
+    LOG_SYSCALL(ret, "%s, %p", path, buf);
+    return ret;
+}
+
+DEFINE_LINUX_SYSCALL5(select, int, nfds, void*, readfs, void*, writefds, void*, exceptfds, struct timeval*, timeout) {
+    long ret;
+    if (nfds != 0) {
+        ret = -EINVAL;
+        goto finish;
+    }
+
+    usec_t duration = SEC2USEC(timeout->tv_sec) + timeout->tv_usec;
+    fibril_usleep(duration);
+    ret = EOK;
+
+finish:
+    LOG_SYSCALL(ret, "%d, %p, %p, %p, %p", nfds, readfs, writefds, exceptfds, timeout);
+    return ret;
+}
+
+DEFINE_LINUX_SYSCALL1(epoll_create1, int, flags) {
+    long ret = -ENOMEM;
+    LOG_SYSCALL(ret, "%d", flags);
+    return ret;
+}
+
+DEFINE_LINUX_SYSCALL2(ftruncate, int, fd, off_t, length) {
+    long ret;
+    openedfile_t *file = openedfile_get_by_fd(fd);
+    if(file == NULL) {
+        ret = -EBADF;
+        goto finish;
+    }
+    if (file->type != FILE_TYPE_REGULAR_FILE) {
+        ret = -EBADF;
+        goto finish;
+    }
+    if (length < 0) {
+        ret = -EINVAL;
+        goto finish;
+    }
+
+    ret = vfs_resize(file->vfs.handle, length);
+    if (ret != EOK) {
+        ret = -ret;
+        goto finish;
+    }
+
+finish:
+    LOG_SYSCALL(ret, "%d, %ld", fd, length);
+    return ret;
+}
+
+DEFINE_LINUX_SYSCALL2(symlink, const char*, target, const char*, linkpath) {
+    long ret = -ENOTSUP;
+    LOG_SYSCALL(ret, "%s, %s", target, linkpath);
     return ret;
 }
