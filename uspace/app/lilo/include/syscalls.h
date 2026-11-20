@@ -93,7 +93,7 @@ static inline const char* __str_error_name(errno_t e) {
 
 #define LOG_SYSCALL_ERROR(ret, msg, ...) \
     if ((long)(ret) < 0) { \
-        print_log("%s(" msg ") = %ld %s\n", __FUNCTION__, ##__VA_ARGS__, ret, __str_error_name(-((long)(ret)))); \
+        print_log("%s(" msg ") = %ld %s\n", __FUNCTION__, ##__VA_ARGS__, translate_error_code(ret), __str_error_name(-((long)(ret)))); \
     }
 
 #define LOG_SYSCALL(ret, msg, ...) \
