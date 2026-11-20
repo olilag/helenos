@@ -502,3 +502,13 @@ DEFINE_LINUX_SYSCALL1(unlink, const char*, path) {
 	LOG_SYSCALL(ret, "%s", path);
     return ret;
 }
+
+DEFINE_LINUX_SYSCALL2(chmod, const char*, path, unsigned short, mode) {
+    vfs_stat_t stat;
+    long ret = vfs_stat_path(path, &stat);
+    if (ret != EOK) {
+        ret = -ret;
+    }
+    LOG_SYSCALL(ret, "%s, %u", path, mode);
+    return ret;
+}
