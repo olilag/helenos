@@ -19,5 +19,6 @@
 #define LINUX_O_SYNC        04010000
 #define LINUX_O_FSYNC         O_SYNC
 #define LINUX_O_ASYNC         020000
+#define LINUX_O_DIRECTORY  (1 << 16)
 
 #endif  // HELENOS_CONSTS_H

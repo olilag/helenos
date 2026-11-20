@@ -49,7 +49,12 @@ static sysarg_t do_open(const char* filename, int open_flags, int permissions) {
 		return -EMFILE;
 	}
 
-	int lookup_flags = WALK_REGULAR;
+	int lookup_flags = 0;
+	if (open_flags & LINUX_O_DIRECTORY) {
+	    lookup_flags |= WALK_DIRECTORY;
+	} else {
+	    lookup_flags |= WALK_REGULAR;
+	}
 	if (open_flags & LINUX_O_CREAT) {
 		if (open_flags & LINUX_O_EXCL) {
 			lookup_flags |= WALK_MUST_CREATE;

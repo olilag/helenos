@@ -254,7 +254,7 @@ DEFINE_LINUX_SYSCALL2(arch_prctl, long, operation, unsigned long, addr) {
 
 DEFINE_LINUX_SYSCALL2(munmap, void*, addr, size_t, length) {
     const long ret = as_area_destroy(addr);
-    LOG_SYSCALL(ret, "%p, 0x%lX", addr, length);
+    LOG_SYSCALL(ret, "%p, %lu", addr, length);
     return ret;
 }
 
@@ -412,7 +412,7 @@ DEFINE_LINUX_SYSCALL6(mmap, void*, addr, size_t, length, int, prot, int, flags, 
     assert((flags & 0x22) == 0x22);  // MAP_ANON | MAP_COPY
 
 finish:
-    LOG_SYSCALL(ret, "%p, 0x%lX, 0x%X, 0x%X, 0x%X, 0x%lX", addr, length, prot, flags, fd, offset);
+    LOG_SYSCALL(ret, "%p, %lu, 0x%X, 0x%X, %d, 0x%lX", addr, length, prot, flags, fd, offset);
     return ret;
 }
 
