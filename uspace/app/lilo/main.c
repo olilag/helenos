@@ -43,6 +43,7 @@
 #include <malloc.h>
 #include <masq.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <str.h>
@@ -54,7 +55,7 @@
 
 /* ------------------------- MACROS ----------------------------------------- */
 
-#define STACK_SIZE (4096 * 4)
+#define STACK_SIZE (4 * 1024 * 1024)
 #define SYSCALL_ENTRY(name) [__NR_##name] = sys_##name
 
 /* ------------------------- TYPE DECLARATIONS ------------------------------ */
@@ -80,8 +81,6 @@ static int run_prog(int argc, char **argv);
 static void *auxv_create(void *auxv, int argc, char **argv_p);
 
 /* ------------------------- OBJECT DEFINITIONS ----------------------------- */
-
-uint64_t emu_stack[STACK_SIZE];
 
 const syscall_handler handlers[334] = {
     SYSCALL_ENTRY(access),
@@ -238,6 +237,11 @@ static int run_prog(int argc, char **argv) {
     default:
         printf("Error code %d while loading %s\n", err, filename);
         return err;
+    }
+
+    uint8_t* emu_stack = as_area_create(AS_AREA_ANY, STACK_SIZE, AS_AREA_READ | AS_AREA_WRITE | AS_AREA_CACHEABLE, AS_AREA_UNPAGED);
+    if (emu_stack == AS_MAP_FAILED) {
+        return ENOMEM;
     }
 
     masq_t context = {
