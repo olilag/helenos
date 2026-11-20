@@ -36,6 +36,7 @@ src = files(
         'src/syscalls/brk.c',
         'src/syscalls/clock.c',
         'src/syscalls/dir.c',
+        'src/syscalls/mman.c',
         'src/syscalls/open.c',
         'src/syscalls/random.c',
         'src/syscalls/read.c',

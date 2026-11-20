@@ -60,6 +60,7 @@ __syscall_entry(sendfile)
 __syscall_entry(wait4)
 
 // syscall 5
+__syscall_entry(mremap)
 
 // syscall 6
 __syscall_entry(mmap)

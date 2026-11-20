@@ -35,10 +35,8 @@
 
 /* ------------------------- FILE INCLUSION --------------------------------- */
 
-#include <as.h>
 #include <assert.h>
 #include <errno.h>
-#include <mem.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <str.h>
@@ -58,22 +56,17 @@
 
 #define UTSLEN 65
 
-/**
- * Define macimum numbers of simultaneously opened files.
- */
-#define MAX_FD 64
-
 /* ------------------------- TYPE DECLARATIONS ------------------------------ */
 
 struct utsname {
-	char sysname[UTSLEN];  /* Operating system name (e.g., "Linux") */
-	char nodename[UTSLEN]; /* Name within "some implementation-defined
-	                           network" */
-	char release[UTSLEN];  /* Operating system release (e.g., "2.6.28") */
-	char version[UTSLEN];  /* Operating system version */
-	char machine[UTSLEN];  /* Hardware identifier */
+    char sysname[UTSLEN];  /* Operating system name (e.g., "Linux") */
+    char nodename[UTSLEN]; /* Name within "some implementation-defined
+                               network" */
+    char release[UTSLEN];  /* Operating system release (e.g., "2.6.28") */
+    char version[UTSLEN];  /* Operating system version */
+    char machine[UTSLEN];  /* Hardware identifier */
 #ifdef _GNU_SOURCE
-	char domainname[]; /* NIS or YP domain name */
+    char domainname[]; /* NIS or YP domain name */
 #endif
 };
 
@@ -112,13 +105,13 @@ static const int err_map[] = {
 static int find_errno(int e) {
     int len = sizeof(err_num) / sizeof(errno_t);
 
-	for (int i = 0; i < len; i++) {
-		if (err_num[i] == e) {
-			return i;
-		}
-	}
+    for (int i = 0; i < len; i++) {
+        if (err_num[i] == e) {
+            return i;
+        }
+    }
 
-	return -1;
+    return -1;
 }
 
 long translate_error_code(long ret) {
@@ -138,21 +131,21 @@ long translate_error_code(long ret) {
 }
 
 DEFINE_LINUX_SYSCALL0(geteuid) {
-	const long ret = 0;
-	LOG_SYSCALL(ret, "");
-	return ret;
+    const long ret = 0;
+    LOG_SYSCALL(ret, "");
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL0(getegid) {
-	const long ret = 0;
-	LOG_SYSCALL(ret, "");
-	return ret;
+    const long ret = 0;
+    LOG_SYSCALL(ret, "");
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL0(getuid) {
-	const long ret = 0;
-	LOG_SYSCALL(ret, "");
-	return ret;
+    const long ret = 0;
+    LOG_SYSCALL(ret, "");
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL0(getpid) {
@@ -168,17 +161,17 @@ DEFINE_LINUX_SYSCALL0(getppid) {
 }
 
 DEFINE_LINUX_SYSCALL0(getgid) {
-	const long ret = 0;
-	LOG_SYSCALL(ret, "");
-	return ret;
+    const long ret = 0;
+    LOG_SYSCALL(ret, "");
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL1(uname, struct utsname*, req) {
-	const long ret = 0;
-	assert(req != NULL);
-	*req = my_utsname;
-	LOG_SYSCALL(ret, "%p", req);
-	return ret;
+    const long ret = 0;
+    assert(req != NULL);
+    *req = my_utsname;
+    LOG_SYSCALL(ret, "%p", req);
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL1(close, int, fd) {
@@ -186,22 +179,22 @@ DEFINE_LINUX_SYSCALL1(close, int, fd) {
 
     int vfs_handle;
     openedfile_t *file = openedfile_get_by_fd(fd);
-	if (file == NULL) {
-		ret = -EBADF;
-		goto finish;
-	}
-	switch (file->type) {
-	case FILE_TYPE_STDIN:
-	case FILE_TYPE_STDOUTS:
-	    vfs_handle = fileno(*(file->stdio));
-		break;
-	case FILE_TYPE_REGULAR_FILE:
-	    vfs_handle = file->vfs.handle;
-		break;
-	default:
+    if (file == NULL) {
         ret = -EBADF;
         goto finish;
-	}
+    }
+    switch (file->type) {
+    case FILE_TYPE_STDIN:
+    case FILE_TYPE_STDOUTS:
+        vfs_handle = fileno(*(file->stdio));
+        break;
+    case FILE_TYPE_REGULAR_FILE:
+        vfs_handle = file->vfs.handle;
+        break;
+    default:
+        ret = -EBADF;
+        goto finish;
+    }
 
     ret = vfs_put(vfs_handle);
     if (ret != EOK) {
@@ -252,12 +245,6 @@ DEFINE_LINUX_SYSCALL2(arch_prctl, long, operation, unsigned long, addr) {
     return ret;
 }
 
-DEFINE_LINUX_SYSCALL2(munmap, void*, addr, size_t, length) {
-    const long ret = as_area_destroy(addr);
-    LOG_SYSCALL(ret, "%p, %lu", addr, length);
-    return ret;
-}
-
 DEFINE_LINUX_SYSCALL2(dup2, int, fd1, int, fd2) {
     const long ret = openedfile_dup2(fd1, fd2);
     LOG_SYSCALL(ret, "%d, %d", fd1, fd2);
@@ -282,100 +269,80 @@ struct timeval {
 };
 
 DEFINE_LINUX_SYSCALL2(gettimeofday, struct timeval*, tv, void*, tz) {
-	long ret = 0;
+    long ret = 0;
 
-	struct timespec ts;
-	getrealtime(&ts);
-	tv->tv_sec = ts.tv_sec;
-	tv->tv_usec = NSEC2USEC(ts.tv_nsec);
+    struct timespec ts;
+    getrealtime(&ts);
+    tv->tv_sec = ts.tv_sec;
+    tv->tv_usec = NSEC2USEC(ts.tv_nsec);
 
-	LOG_SYSCALL(ret, "%p, %p", tv, tz);
-	return ret;
+    LOG_SYSCALL(ret, "%p, %p", tv, tz);
+    return ret;
 }
 
-/**
- * Read the value of a symbolic link
- *
- * @param a1 Path
- * @param a2 Response buffer
- * @param a3 Buffer size
- * @param masq Emulated context
- *
- * @return See man 2 readlink
- */
 DEFINE_LINUX_SYSCALL3(readlink, char*, path, char*, buf, size_t, bufsz) {
     long ret = -EINVAL;
     LOG_SYSCALL(ret, "%s, %p, %ld", path, buf, bufsz);
     return ret;
-	if (path == NULL || buf == NULL) {
-		return (long) -1;
-	}
-	const size_t path_len = str_length(path);
-	const size_t to_copy = (path_len > bufsz) ? bufsz : path_len;
-	str_cpy(buf, to_copy, path);
-	// LOG_SYSCALL("%s, %p, %ld", path, buf, bufsz, to_copy);
-	return to_copy;
+    // if (path == NULL || buf == NULL) {
+    //     return (long) -1;
+    // }
+    // const size_t path_len = str_length(path);
+    // const size_t to_copy = (path_len > bufsz) ? bufsz : path_len;
+    // str_cpy(buf, to_copy, path);
+    // LOG_SYSCALL(ret, "%s, %p, %ld", path, buf, bufsz);
+    // return to_copy;
 }
 
 DEFINE_LINUX_SYSCALL3(mprotect, void*, addr, size_t, length, int, prot) {
-	const long ret = 0;
-	LOG_SYSCALL(ret, "%p, 0x%lX, 0x%X", addr, length, prot);
-	return ret;
+    const long ret = 0;
+    LOG_SYSCALL(ret, "%p, 0x%lX, 0x%X", addr, length, prot);
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL3(lseek, int, fd, off_t, off, int, whence) {
-	long ret;
-	openedfile_t *file = openedfile_get_by_fd(fd);
-	if(file == NULL){
+    long ret;
+    openedfile_t *file = openedfile_get_by_fd(fd);
+    if(file == NULL){
         ret = -EBADF;
-		goto finish;
-	}
-	if (file->type != FILE_TYPE_REGULAR_FILE) {
-		ret = -EBADF;
-		goto finish;
-	}
-	if (off < 0 && -off > (off_t)file->vfs.position) {
+        goto finish;
+    }
+    if (file->type != FILE_TYPE_REGULAR_FILE) {
+        ret = -EBADF;
+        goto finish;
+    }
+    if (off < 0 && -off > (off_t)file->vfs.position) {
         ret = -EINVAL;
-		goto finish;
-	}
+        goto finish;
+    }
 
-	switch (whence) {
-	case SEEK_CUR: {
-		file->vfs.position += off;
-		ret = file->vfs.position;
-		break;
-	}
-	case SEEK_SET:
-		file->vfs.position = off;
-		ret = off;
-		break;
-	case SEEK_END:
-	default:
-		ret = -1;
-		break;
-	}
+    switch (whence) {
+    case SEEK_CUR: {
+        file->vfs.position += off;
+        ret = file->vfs.position;
+        break;
+    }
+    case SEEK_SET:
+        file->vfs.position = off;
+        ret = off;
+        break;
+    case SEEK_END:
+    default:
+        ret = -1;
+        break;
+    }
 
 finish:
-	LOG_SYSCALL(ret, "%d, %ld, %d", fd, off, whence);
-	return ret;
+    LOG_SYSCALL(ret, "%d, %ld, %d", fd, off, whence);
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL3(rt_sigaction, int, signum, void*, oldaction, void*, newaction) {
-	long ret = 0;
-	LOG_SYSCALL(ret, "%d, %p, %p", signum, oldaction, newaction);
-	return ret;
+    long ret = 0;
+    LOG_SYSCALL(ret, "%d, %p, %p", signum, oldaction, newaction);
+    return ret;
 }
 
-/**
- * @brief Copy content between two files
- *
- * @param a1
- * @param a2
- * @param a3
- * @param a4
- * @param masq
- * @return
- */
 DEFINE_LINUX_SYSCALL4(sendfile, int, out_fd, int, in_fd, off_t, offset, size_t, count) {
     long ret = -EINVAL;
     LOG_SYSCALL(ret, "%d, %d, %ld, %lu", out_fd, in_fd, offset, count);
@@ -383,8 +350,8 @@ DEFINE_LINUX_SYSCALL4(sendfile, int, out_fd, int, in_fd, off_t, offset, size_t, 
 }
 
 DEFINE_LINUX_SYSCALL4(fadvise64, int, fd, off_t, offset, off_t, len, int, advice) {
-	long ret = 0;
-	LOG_SYSCALL(ret, "%d, %ld, %ld, %d", fd, offset, len, advice);
+    long ret = 0;
+    LOG_SYSCALL(ret, "%d, %ld, %ld, %d", fd, offset, len, advice);
     return ret;
 }
 
@@ -394,53 +361,31 @@ DEFINE_LINUX_SYSCALL3(ioctl, int, fd, unsigned long, request, void*, data) {
     return ret;
 }
 
-DEFINE_LINUX_SYSCALL6(mmap, void*, addr, size_t, length, int, prot, int, flags, int, fd, off_t, offset) {
-	long ret;
-	if (length == 0 || offset != 0 || fd != -1) {
-		ret = -EINVAL;
-		goto finish;
-	}
+DEFINE_LINUX_SYSCALL3(execve, const char*, filename, char **const, argv, char **const, envp) {
+    unsigned long ret = 0, i = 0;
+    const char * new_argv[128];
+    new_argv[0] = "/app/lilo";
+    while(argv[i++] != NULL && i < 128) {
+        DPRINTF("argv[%ld] = %s\n", i - 1, argv[i - 1]);
+        new_argv[i] = argv[i - 1];
+    }
+    assert(argv[i - 1] == NULL);
+    new_argv[i] = NULL;
 
-    ret = (long)as_area_create(addr == NULL ? AS_AREA_ANY : addr, length,
-                                AS_AREA_READ | AS_AREA_WRITE | AS_AREA_CACHEABLE, AS_AREA_UNPAGED);
-
-    if (ret == (long)AS_MAP_FAILED) {
-        ret = -ENOMEM;
-        goto finish;
+    if(i > 1) {
+        /*
+         * The filename is absolute path to the binary, whether the argv[1]
+         * might be only the binary filename. Since the lilo must also find
+         * the executable by the absolute path, we substitute it's argv[1]
+         */
+        new_argv[1] = filename;
     }
 
-    assert((flags & 0x22) == 0x22);  // MAP_ANON | MAP_COPY
+    const errno_t err = task_spawnvf(&ret, NULL, new_argv[0], new_argv, -1, -1, -1);
+    assert(err == 0);
 
-finish:
-    LOG_SYSCALL(ret, "%p, %lu, 0x%X, 0x%X, %d, 0x%lX", addr, length, prot, flags, fd, offset);
+    LOG_SYSCALL(ret, "%s", filename);
     return ret;
-}
-
-DEFINE_LINUX_SYSCALL3(execve, const char*, filename, char **const, argv, char **const, envp) {
-	unsigned long ret = 0, i = 0;
-	const char * new_argv[128];
-	new_argv[0] = "/app/lilo";
-	while(argv[i++] != NULL && i < 128) {
-		DPRINTF("argv[%ld] = %s\n", i - 1, argv[i - 1]);
-		new_argv[i] = argv[i - 1];
-	}
-	assert(argv[i - 1] == NULL);
-	new_argv[i] = NULL;
-
-	if(i > 1) {
-		/*
-		 * The filename is absolute path to the binary, whether the argv[1]
-		 * might be only the binary filename. Since the lilo must also find
-		 * the executable by the absolute path, we substitute it's argv[1]
-		 */
-		new_argv[1] = filename;
-	}
-
-	const errno_t err = task_spawnvf(&ret, NULL, new_argv[0], new_argv, -1, -1, -1);
-	assert(err == 0);
-
-	LOG_SYSCALL(ret, "%s", filename);
-	return ret;
 }
 
 DEFINE_LINUX_SYSCALL4(wait4, long, pid, int*, wstatus, int, options, void*, rusage) {
@@ -451,36 +396,36 @@ DEFINE_LINUX_SYSCALL4(wait4, long, pid, int*, wstatus, int, options, void*, rusa
     } else {
         ret = pid;
     }
-	int rr;
-	task_wait_t wait;
-	task_exit_t ex;
-	errno_t rc = task_setup_wait(pid, &wait);
-	assert(rc == EOK);
-	rc = task_wait(&wait, &ex, &rr);
-	assert(rc == EOK);
-	assert(ex == TASK_EXIT_NORMAL);
+    int rr;
+    task_wait_t wait;
+    task_exit_t ex;
+    errno_t rc = task_setup_wait(pid, &wait);
+    assert(rc == EOK);
+    rc = task_wait(&wait, &ex, &rr);
+    assert(rc == EOK);
+    assert(ex == TASK_EXIT_NORMAL);
 
 finish:
     LOG_SYSCALL(ret, "%ld, %p, %d, %p", pid, wstatus, options, rusage);
-	return ret;
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL1(sysinfo, void*, info) {
-	long ret = 0;
-	LOG_SYSCALL(ret, "%p", info);
-	return ret;
+    long ret = 0;
+    LOG_SYSCALL(ret, "%p", info);
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL4(prlimit64, long, pid, int, resource, void*, old_limit, void*, new_limit) {
-	long ret = 0;
-	LOG_SYSCALL(ret, "%ld, %d, %p, %p", pid, resource, old_limit, new_limit);
-	return ret;
+    long ret = 0;
+    LOG_SYSCALL(ret, "%ld, %d, %p, %p", pid, resource, old_limit, new_limit);
+    return ret;
 }
 
 DEFINE_LINUX_SYSCALL1(set_tid_address, int*, address) {
-	long ret = thread_get_id();
-	LOG_SYSCALL(ret, "%p", address);
-	return ret;
+    long ret = thread_get_id();
+    LOG_SYSCALL(ret, "%p", address);
+    return ret;
 }
 
 #define _SIGSET_NWORDS (1024 / (8 * sizeof (unsigned long int)))
@@ -490,16 +435,16 @@ typedef struct {
 
 DEFINE_LINUX_SYSCALL3(rt_sigprocmask, int, how, const sigset_t*, set, sigset_t*, oldset) {
     long ret = -1;
-	LOG_SYSCALL(ret, "%d, %p", how, set);
+    LOG_SYSCALL(ret, "%d, %p", how, set);
     return ret;
 }
 
 DEFINE_LINUX_SYSCALL1(unlink, const char*, path) {
     long ret = vfs_unlink_path(path);
     if (ret != EOK) {
-		ret = -ret;
+        ret = -ret;
     }
-	LOG_SYSCALL(ret, "%s", path);
+    LOG_SYSCALL(ret, "%s", path);
     return ret;
 }
 
