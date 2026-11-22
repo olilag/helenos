@@ -42,6 +42,7 @@
 #include <stats.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <str.h>
@@ -311,30 +312,53 @@ DEFINE_LINUX_SYSCALL3(lseek, int, fd, off_t, off, int, whence) {
         ret = -EBADF;
         goto finish;
     }
+    // TODO: only disallow when stdin/stdout is console
     if (file->type != FILE_TYPE_REGULAR_FILE) {
-        ret = -EBADF;
+        ret = -ESPIPE;
         goto finish;
     }
-    if (off < 0 && -off > (off_t)file->vfs.position) {
+    vfs_stat_t stat;
+    ret = vfs_stat(file->vfs.handle, &stat);
+    if (ret != EOK) {
+        ret = -ret;
+        goto finish;
+    }
+
+    aoff64_t off_base;
+    switch (whence) {
+    case SEEK_CUR:
+        if (off < 0 && (aoff64_t)(-off) > file->vfs.position) {
+            ret = -EINVAL;
+            goto finish;
+        }
+        off_base = file->vfs.position;
+        break;
+    case SEEK_SET:
+        if (off < 0) {
+            ret = -EINVAL;
+            goto finish;
+        }
+        off_base = 0;
+        break;
+    case SEEK_END:
+        if (off < 0 && (aoff64_t)(-off) > stat.size) {
+            ret = -EINVAL;
+            goto finish;
+        }
+        off_base = stat.size;
+        break;
+    default:
         ret = -EINVAL;
         goto finish;
     }
 
-    switch (whence) {
-    case SEEK_CUR: {
-        file->vfs.position += off;
-        ret = file->vfs.position;
-        break;
+    if (off > 0 && UINT64_MAX - off < off_base) {
+        ret = -EOVERFLOW;
+        goto finish;
     }
-    case SEEK_SET:
-        file->vfs.position = off;
-        ret = off;
-        break;
-    case SEEK_END:
-    default:
-        ret = -1;
-        break;
-    }
+
+    file->vfs.position = off_base + off;
+    ret = off_base;
 
 finish:
     LOG_SYSCALL(ret, "%d, %ld, %d", fd, off, whence);
@@ -469,7 +493,7 @@ DEFINE_LINUX_SYSCALL2(fcntl, int, fd, int, op) {
 }
 
 DEFINE_LINUX_SYSCALL2(pipe2, int*, fd, int, flags) {
-    long ret = -EFAULT;
+    long ret = -EINVAL;
     LOG_SYSCALL(ret, "[%d, %d], %d", fd[0], fd[1], flags);
     return ret;
 }
