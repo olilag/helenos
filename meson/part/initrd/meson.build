@@ -106,9 +106,9 @@ dist = custom_target('DIST',
 if RDFMT == 'tmpfs'
 	initrd_cmd = [ 'tar', '-c', '-f', '@OUTPUT@', '-C', dist_dir, '.' ]
 elif RDFMT == 'fat'
-	initrd_cmd = [ mkfat, '1048576', dist_dir, '@OUTPUT@' ]
+	initrd_cmd = [ mkfat, '2097152', dist_dir, '@OUTPUT@' ]
 elif RDFMT == 'ext4fs'
-	initrd_cmd = [ mkext4, '1048576', dist_dir, '@OUTPUT@' ]
+	initrd_cmd = [ mkext4, '2097152', dist_dir, '@OUTPUT@' ]
 else
 	error('Unknown RDFMT: ' + RDFMT)
 endif
