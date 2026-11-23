@@ -27,8 +27,11 @@
 #
 
 includes += include_directories('include')
+deps = ['console']
 src = files(
         'main.c',
+        'src/console_input.c',
+        'src/files.c',
         'src/syscalls.c',
         'src/tests.c',
         'src/files.c',
