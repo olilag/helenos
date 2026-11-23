@@ -35,10 +35,13 @@
 
 #include <vfs/vfs.h>
 
+#include "console_input.h"
+
 typedef enum {
 	FILE_TYPE_STDIN = 0,
 	FILE_TYPE_STDOUTS = 1,
 	FILE_TYPE_REGULAR_FILE = 2,
+	FILE_TYPE_CONSOLE = 3,
 	FILE_TYPE_LAST,
 } file_type_t;
 
@@ -60,8 +63,12 @@ struct openedfile {
 	union {
 		FILE** stdio;
 		regular_openedfile_t vfs;
+		console_input_t* console;
 	};
 };
+
+errno_t files_init(void);
+void files_done(void);
 
 extern openedfile_t* openedfile_get_by_fd(int);
 int openedfile_dup2(int fd1, int fd2);

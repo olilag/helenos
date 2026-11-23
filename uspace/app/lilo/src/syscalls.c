@@ -193,6 +193,10 @@ DEFINE_LINUX_SYSCALL1(close, int, fd) {
     case FILE_TYPE_STDOUTS:
         vfs_handle = fileno(*(file->stdio));
         break;
+    // TODO: what to do?
+    // case FILE_TYPE_CONSOLE:
+    //     vfs_handle = fileno(file->console->ofile);
+    //     break;
     case FILE_TYPE_REGULAR_FILE:
         vfs_handle = file->vfs.handle;
         break;
@@ -312,11 +316,11 @@ DEFINE_LINUX_SYSCALL3(lseek, int, fd, off_t, off, int, whence) {
         ret = -EBADF;
         goto finish;
     }
-    // TODO: only disallow when stdin/stdout is console
-    if (file->type != FILE_TYPE_REGULAR_FILE) {
+    if (file->type == FILE_TYPE_CONSOLE) {
         ret = -ESPIPE;
         goto finish;
     }
+
     vfs_stat_t stat;
     ret = vfs_stat(file->vfs.handle, &stat);
     if (ret != EOK) {
@@ -380,12 +384,6 @@ DEFINE_LINUX_SYSCALL4(sendfile, int, out_fd, int, in_fd, off_t, offset, size_t, 
 DEFINE_LINUX_SYSCALL4(fadvise64, int, fd, off_t, offset, off_t, len, int, advice) {
     long ret = 0;
     LOG_SYSCALL(ret, "%d, %ld, %ld, %d", fd, offset, len, advice);
-    return ret;
-}
-
-DEFINE_LINUX_SYSCALL3(ioctl, int, fd, unsigned long, request, void*, data) {
-    const long ret = -ENOTTY;
-    LOG_SYSCALL(ret, "%d, %lX", fd, request);
     return ret;
 }
 

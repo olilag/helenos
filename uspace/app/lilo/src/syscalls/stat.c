@@ -8,25 +8,25 @@
 
 struct stat {
     unsigned long st_dev;
-	unsigned long st_ino;
-	unsigned long st_nlink;
+    unsigned long st_ino;
+    unsigned long st_nlink;
 
-	unsigned int st_mode;
-	unsigned int st_uid;
-	unsigned int st_gid;
-	unsigned int __pad0;
-	unsigned long st_rdev;
-	long st_size;
-	long st_blksize;
-	long st_blocks;	/* Number 512-byte blocks allocated. */
+    unsigned int st_mode;
+    unsigned int st_uid;
+    unsigned int st_gid;
+    unsigned int __pad0;
+    unsigned long st_rdev;
+    long st_size;
+    long st_blksize;
+    long st_blocks;	/* Number 512-byte blocks allocated. */
 
-	unsigned long st_atime;
-	unsigned long st_atime_nsec;
-	unsigned long st_mtime;
-	unsigned long st_mtime_nsec;
-	unsigned long st_ctime;
-	unsigned long st_ctime_nsec;
-	long _unused[3];
+    unsigned long st_atime;
+    unsigned long st_atime_nsec;
+    unsigned long st_mtime;
+    unsigned long st_mtime_nsec;
+    unsigned long st_ctime;
+    unsigned long st_ctime_nsec;
+    long _unused[3];
 };
 
 #define S_IFMT     0170000   /* all file types */
@@ -66,28 +66,28 @@ struct stat {
 #define S_ISSOCK(m) ((m & S_IFSOCK) != 0) /* socket? (Not in POSIX.1-1996.) */
 
 static int stat_to_posix(struct stat *dest, const vfs_stat_t *src) {
-	memset(dest, 0, sizeof(struct stat));
+    memset(dest, 0, sizeof(struct stat));
 
-	dest->st_dev = src->service;
-	dest->st_ino = src->index;
+    dest->st_dev = src->service;
+    dest->st_ino = src->index;
 
-	/* HelenOS doesn't support permissions, so we set them all */
-	dest->st_mode = S_IRWXU | S_IRWXG | S_IRWXO;
-	if (src->is_file) {
-		dest->st_mode |= S_IFREG;
-	}
-	if (src->is_directory) {
-		dest->st_mode |= S_IFDIR;
-	}
+    /* HelenOS doesn't support permissions, so we set them all */
+    dest->st_mode = S_IRWXU | S_IRWXG | S_IRWXO;
+    if (src->is_file) {
+        dest->st_mode |= S_IFREG;
+    }
+    if (src->is_directory) {
+        dest->st_mode |= S_IFDIR;
+    }
 
-	dest->st_nlink = src->lnkcnt;
-	dest->st_size = src->size;
+    dest->st_nlink = src->lnkcnt;
+    dest->st_size = src->size;
 
-	if (src->size > INT64_MAX) {
-		return -ERANGE;
-	}
+    if (src->size > INT64_MAX) {
+        return -ERANGE;
+    }
 
-	return 0;
+    return 0;
 }
 
 DEFINE_LINUX_SYSCALL2(stat, char*, filename, struct stat*, stat) {
@@ -113,22 +113,25 @@ DEFINE_LINUX_SYSCALL2(fstat, int, fd, struct stat*, stat) {
 
     int vfs_handle;
     openedfile_t *file = openedfile_get_by_fd(fd);
-	if (file == NULL) {
-		ret = -EBADF;
-		goto finish;
-	}
-	switch (file->type) {
-	case FILE_TYPE_STDIN:
-	case FILE_TYPE_STDOUTS:
-	    vfs_handle = fileno(*(file->stdio));
-		break;
-	case FILE_TYPE_REGULAR_FILE:
-	    vfs_handle = file->vfs.handle;
-		break;
-	default:
+    if (file == NULL) {
         ret = -EBADF;
         goto finish;
-	}
+    }
+    switch (file->type) {
+    case FILE_TYPE_STDIN:
+    case FILE_TYPE_STDOUTS:
+        vfs_handle = fileno(*(file->stdio));
+        break;
+    case FILE_TYPE_CONSOLE:
+        vfs_handle = fileno(file->console->ofile);
+        break;
+    case FILE_TYPE_REGULAR_FILE:
+        vfs_handle = file->vfs.handle;
+        break;
+    default:
+        ret = -EBADF;
+        goto finish;
+    }
 
     vfs_stat_t hst;
     ret = vfs_stat(vfs_handle, &hst);

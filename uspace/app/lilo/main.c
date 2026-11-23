@@ -49,6 +49,7 @@
 #include <str.h>
 #include <str_error.h>
 
+#include "files.h"
 #include "linux/auxvec.h"
 #include "syscalls.h"
 #include "x86_64-linux-generic/asm/unistd_64.h"
@@ -194,6 +195,12 @@ static int run_prog(int argc, char **argv) {
         return ENOMEM;
     }
 
+    err = files_init();
+    if (err != EOK) {
+        as_area_destroy(emu_stack);
+        return err;
+    }
+
     masq_t context = {
         .fsbase = (uint64_t) memalign(PAGE_SIZE, PAGE_SIZE),
         .rcx = (uint64_t) finfo.entry,
@@ -210,6 +217,8 @@ static int run_prog(int argc, char **argv) {
         const long id = context.rax;
         if (id == __NR_exit || id == __NR_exit_group) {
             print_log("exit(%ld)\n", context.rdi);
+            files_done();
+            as_area_destroy(emu_stack);
             return context.rdi;
         } else if (id == __NR_vfork) {
             backup_context = context;
