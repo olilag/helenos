@@ -74,7 +74,12 @@ static int stat_to_posix(struct stat *dest, const vfs_stat_t *src) {
     /* HelenOS doesn't support permissions, so we set them all */
     dest->st_mode = S_IRWXU | S_IRWXG | S_IRWXO;
     if (src->is_file) {
-        dest->st_mode |= S_IFREG;
+        if (src->service != 0) {
+            // bit hacky currently only used by console
+            dest->st_mode |= S_IFCHR;
+        } else {
+            dest->st_mode |= S_IFREG;
+        }
     }
     if (src->is_directory) {
         dest->st_mode |= S_IFDIR;
