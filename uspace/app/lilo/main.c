@@ -190,7 +190,7 @@ static int run_prog(int argc, char **argv) {
         return err;
     }
 
-    uint8_t* emu_stack = as_area_create(AS_AREA_ANY, STACK_SIZE, AS_AREA_READ | AS_AREA_WRITE | AS_AREA_CACHEABLE, AS_AREA_UNPAGED);
+    uint8_t* emu_stack = as_area_create(AS_AREA_ANY, STACK_SIZE, AS_AREA_READ | AS_AREA_WRITE | AS_AREA_CACHEABLE | AS_AREA_GUARD | AS_AREA_LATE_RESERVE, AS_AREA_UNPAGED);
     if (emu_stack == AS_MAP_FAILED) {
         return ENOMEM;
     }
