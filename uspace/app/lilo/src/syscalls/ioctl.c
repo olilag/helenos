@@ -1,4 +1,5 @@
-#include "console_input.h"
+#include <fbfont/font-8x16.h>
+
 #include "files.h"
 #include "syscalls.h"
 #include "terminal.h"
@@ -29,6 +30,8 @@ DEFINE_LINUX_SYSCALL3(ioctl, int, fd, unsigned long, request, void*, data) {
     if (request == TIOCGWINSZ) {
         struct winsize* winsize = data;
         terminal_get_size(file->terminal, &winsize->ws_col, &winsize->ws_row);
+        winsize->ws_xpixel = winsize->ws_col * FONT_WIDTH;
+        winsize->ws_ypixel = winsize->ws_row * FONT_WIDTH;
         ret = EOK;
         LOG_SYSCALL_SUCCESS(ret, "%d, TIOCGWINSZ, {ws_col=%u, ws_row=%u, ws_xpixel=%u, ws_ypixel=%u}", fd, winsize->ws_col, winsize->ws_row, winsize->ws_xpixel, winsize->ws_ypixel);
         goto finish;

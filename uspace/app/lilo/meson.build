@@ -27,7 +27,7 @@
 #
 
 includes += include_directories('include')
-deps = ['console']
+deps = ['console', 'fbfont']
 src = files(
         'main.c',
         'src/console_input.c',
