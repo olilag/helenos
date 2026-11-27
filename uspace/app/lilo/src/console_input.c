@@ -47,6 +47,13 @@ console_input_t* console_input_new(FILE* ifile, FILE* ofile) {
     }
     ci->ofile = ofile;
 
+    console_flush(ci->console);
+    if (console_get_size(ci->console, &ci->con_cols, &ci->con_rows) != EOK) {
+        console_done(ci->console);
+        free(ci);
+        return NULL;
+    }
+
     return ci;
 }
 

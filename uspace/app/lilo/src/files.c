@@ -39,7 +39,7 @@
 #include <vfs/vfs.h>
 
 #include "files.h"
-#include "console_input.h"
+#include "terminal.h"
 
 #define MAX_FILES 16
 
@@ -65,16 +65,14 @@ static ssize_t read_stdout(openedfile_t *file, void *buffer, size_t size) {
 static ssize_t read_console(openedfile_t *file, void *buffer, size_t size) {
     assert(file->type == FILE_TYPE_CONSOLE);
 
-    char* dest;
-    if (console_input_read(file->console, &dest) != EOK) {
-        // handle ENOENT emulate SIGINT
-        return -1;
-    }
-    size_t dest_length = str_length(dest);
-    memcpy(buffer, dest, min(size, dest_length));
-    free(dest);
+    line_t* line = terminal_get_line(file->terminal);
+    size_t remaining = line->length - line->head;
+    size_t r_size = min(remaining, size);
+    memcpy(buffer, &line->line[line->head], r_size);
+    line->head += r_size;
+    terminal_put_line(file->terminal, line);
 
-    return min(size, dest_length);
+    return r_size;
 }
 
 static ssize_t write_regular_file(openedfile_t *file, void *buffer, size_t size) {
@@ -96,7 +94,7 @@ static ssize_t write_stdin(openedfile_t *file, void *buffer, size_t size) {
 
 static ssize_t write_console(openedfile_t *file, void *buffer, size_t size) {
     assert(file->type == FILE_TYPE_CONSOLE);
-    return fwrite(buffer, 1, size, file->console->ofile);
+    return fwrite(buffer, 1, size, file->terminal->ofile);
 }
 
 int openedfile_dup2(int fd1, int fd2) {
@@ -160,7 +158,7 @@ openedfile_ops_t openedfile_ops[] = {
     },
 };
 
-static console_input_t* cinput;
+static tty_t terminal;
 
 static bool is_service(FILE* file) {
     int fd = fileno(file);
@@ -238,8 +236,8 @@ errno_t files_init(void) {
         }
     }
 
-    cinput = console_input_new(console_in, console_out);
-    if (cinput == NULL) {
+    errno_t err = terminal_init(&terminal, console_in, console_out);
+    if (err != EOK) {
         if (!stdin_service) {
             fclose(console_in);
         }
@@ -247,13 +245,13 @@ errno_t files_init(void) {
         if (!stdout_service) {
             fclose(console_out);
         }
-        return ENOMEM;
+        return err;
     }
 
     openedfile_t _stdin = {.used = 1};
     if (stdin_service) {
         _stdin.type = FILE_TYPE_CONSOLE;
-        _stdin.console = cinput;
+        _stdin.terminal = &terminal;
     } else {
         _stdin.type = FILE_TYPE_STDIN;
         _stdin.stdio = &stdin;
@@ -262,7 +260,7 @@ errno_t files_init(void) {
     openedfile_t _stdout = {.used = 1};
     if (stdout_service) {
         _stdout.type = FILE_TYPE_CONSOLE;
-        _stdout.console = cinput;
+        _stdout.terminal = &terminal;
     } else {
         _stdout.type = FILE_TYPE_STDOUTS;
         _stdout.stdio = &stdout;
@@ -283,7 +281,6 @@ errno_t files_init(void) {
 }
 
 void files_done(void) {
-    console_input_destroy(cinput);
     // TODO: loop over open files and close them
     return;
 }

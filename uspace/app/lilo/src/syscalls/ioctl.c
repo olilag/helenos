@@ -1,6 +1,7 @@
 #include "console_input.h"
 #include "files.h"
 #include "syscalls.h"
+#include "terminal.h"
 
 #define TIOCGWINSZ 21523
 
@@ -27,17 +28,15 @@ DEFINE_LINUX_SYSCALL3(ioctl, int, fd, unsigned long, request, void*, data) {
 
     if (request == TIOCGWINSZ) {
         struct winsize* winsize = data;
-        sysarg_t col, row;
-        console_input_get_size(file->console, &col, &row);
-        winsize->ws_col = col;
-        winsize->ws_row = row;
+        terminal_get_size(file->terminal, &winsize->ws_col, &winsize->ws_row);
         ret = EOK;
+        LOG_SYSCALL_SUCCESS(ret, "%d, TIOCGWINSZ, {ws_col=%u, ws_row=%u, ws_xpixel=%u, ws_ypixel=%u}", fd, winsize->ws_col, winsize->ws_row, winsize->ws_xpixel, winsize->ws_ypixel);
         goto finish;
     }
 
     ret = -EINVAL;
 
 finish:
-    LOG_SYSCALL(ret, "%d, %lX", fd, request);
+    LOG_SYSCALL_ERROR(ret, "%d, %lX", fd, request);
     return ret;
 }

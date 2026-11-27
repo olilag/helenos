@@ -33,6 +33,7 @@ src = files(
         'src/console_input.c',
         'src/files.c',
         'src/syscalls.c',
+        'src/terminal.c',
         'src/tests.c',
         'src/syscalls/access.c',
         'src/syscalls/brk.c',

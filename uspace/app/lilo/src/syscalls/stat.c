@@ -128,7 +128,7 @@ DEFINE_LINUX_SYSCALL2(fstat, int, fd, struct stat*, stat) {
         vfs_handle = fileno(*(file->stdio));
         break;
     case FILE_TYPE_CONSOLE:
-        vfs_handle = fileno(file->console->ofile);
+        vfs_handle = fileno(file->terminal->ofile);
         break;
     case FILE_TYPE_REGULAR_FILE:
         vfs_handle = file->vfs.handle;

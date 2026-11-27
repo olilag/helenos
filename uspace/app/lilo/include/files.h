@@ -35,7 +35,7 @@
 
 #include <vfs/vfs.h>
 
-#include "console_input.h"
+#include "terminal.h"
 
 typedef enum {
 	FILE_TYPE_STDIN = 0,
@@ -63,7 +63,7 @@ struct openedfile {
 	union {
 		FILE** stdio;
 		regular_openedfile_t vfs;
-		console_input_t* console;
+		tty_t* terminal;
 	};
 };
 
