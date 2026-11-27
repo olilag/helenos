@@ -9,6 +9,8 @@
 
 #define INPUT_MAX_SIZE 1024
 
+typedef void(*on_resize_cb_t)(sysarg_t, sysarg_t, void*);
+
 typedef struct {
     console_ctrl_t* console;
     FILE* ofile;
@@ -19,6 +21,9 @@ typedef struct {
     size_t nc;
     bool done;
     bool exit;
+
+    on_resize_cb_t on_resize;
+    void* on_resize_arg;
 } console_input_t;
 
 console_input_t* console_input_new(FILE* ifile, FILE* ofile);

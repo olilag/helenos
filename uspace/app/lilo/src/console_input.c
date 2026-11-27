@@ -153,6 +153,10 @@ static errno_t console_input_resize(console_input_t* ci) {
         return rc;
     }
 
+    if (ci->on_resize != NULL) {
+        ci->on_resize(ci->con_cols, ci->con_rows, ci->on_resize_arg);
+    }
+
     sysarg_t col, row;
     rc = console_get_pos(ci->console, &col, &row);
     if (rc != EOK) {

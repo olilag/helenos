@@ -16,12 +16,26 @@ typedef struct {
     console_input_t* input;
 } reader_args_t;
 
+static void on_console_resize(sysarg_t cols, sysarg_t rows, void* arg) {
+    tty_t* terminal = arg;
+
+    fibril_mutex_lock(&terminal->mutex);
+
+    terminal->cols = cols;
+    terminal->rows = rows;
+
+    fibril_mutex_unlock(&terminal->mutex);
+}
+
 static errno_t input_reader(void* arg) {
     reader_args_t* args = arg;
     tty_t* terminal = args->terminal;
     console_input_t* input = args->input;
     char* line;
     errno_t err;
+
+    input->on_resize = on_console_resize;
+    input->on_resize_arg = terminal;
 
     while (true) {
         err = console_input_read(input, &line);
@@ -74,7 +88,7 @@ errno_t terminal_init(tty_t* terminal, FILE* ifile, FILE* ofile) {
     sysarg_t cols, rows;
     console_input_get_size(cinput, &cols, &rows);
     terminal->cols = cols;
-    terminal->cols = rows;
+    terminal->rows = rows;
     terminal->ofile = ofile;
 
     arg.terminal = terminal;
