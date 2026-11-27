@@ -17,7 +17,6 @@ typedef struct {
     sysarg_t con_cols;
     sysarg_t con_rows;
     size_t nc;
-    size_t pos;
     bool done;
     bool exit;
 } console_input_t;
